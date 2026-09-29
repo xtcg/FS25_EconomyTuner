@@ -70,6 +70,16 @@ function SellPrices.parseFactors(str)
     return factors
 end
 
+---Mean of the 12 seasonal factors: the year-round average price is pricePerLiter x this.
+function SellPrices.getMeanFactor(factors)
+    local sum = 0
+    for period = 1, SellPrices.NUM_PERIODS do
+        sum = sum + (factors[period] or 1)
+    end
+    local mean = sum / SellPrices.NUM_PERIODS
+    return mean > 0 and mean or 1
+end
+
 ---Reads a price table. Returns nil when the file cannot be opened.
 -- config = { settings = {...}, fillTypes = { [NAME] = {price=, scale=, factors=} }, stations = { {path=, fillType=, priceScale=} } }
 function SellPrices.readConfig(filename)
@@ -93,6 +103,7 @@ function SellPrices.readConfig(filename)
 
         local entry = {
             price = xmlFile:getFloat(key .. "#price"),
+            average = xmlFile:getFloat(key .. "#average"),
             scale = xmlFile:getFloat(key .. "#scale")
         }
         local factorString = xmlFile:getString(key .. "#factors")
@@ -104,13 +115,19 @@ function SellPrices.readConfig(filename)
             entry.factors = factors
         end
 
-        if entry.price ~= nil and entry.scale ~= nil then
-            warning("%s: %s has both price and scale, using price", filename, name)
+        local numSet = (entry.price ~= nil and 1 or 0) + (entry.average ~= nil and 1 or 0) + (entry.scale ~= nil and 1 or 0)
+        if numSet > 1 then
+            warning("%s: %s sets more than one of price/average/scale, using %s", filename, name, entry.price ~= nil and "price" or "average")
+            if entry.price ~= nil then
+                entry.average = nil
+            end
             entry.scale = nil
         end
-        if (entry.price ~= nil and entry.price <= 0) or (entry.scale ~= nil and entry.scale <= 0) then
-            warning("%s: %s price/scale must be > 0, entry ignored", filename, name)
-            return
+        for _, attr in ipairs({ "price", "average", "scale" }) do
+            if entry[attr] ~= nil and entry[attr] <= 0 then
+                warning("%s: %s %s must be > 0, entry ignored", filename, name, attr)
+                return
+            end
         end
         if config.fillTypes[name] ~= nil then
             warning("%s: %s listed twice, the later entry wins", filename, name)
@@ -200,13 +217,15 @@ function SellPrices:apply(keepHistory)
             local origPrice = original ~= nil and original.origPrice or fillType.pricePerLiter
             local origFactors = original ~= nil and original.origFactors or table.clone(fillType.economy.factors)
 
+            local factors = entry.factors or origFactors
             local price = origPrice
             if entry.price ~= nil then
                 price = entry.price / 1000
+            elseif entry.average ~= nil then
+                price = entry.average / 1000 / SellPrices.getMeanFactor(factors)
             elseif entry.scale ~= nil then
                 price = origPrice * entry.scale
             end
-            local factors = entry.factors or origFactors
 
             local isChanged = not isSame(price, origPrice)
             for period = 1, SellPrices.NUM_PERIODS do
@@ -366,7 +385,7 @@ function SellPrices:dump()
         warning("cannot write %s", filename)
         return nil
     end
-    file:write("fillType;title;originalPer1000;appliedPer1000;changed;factors;stations\n")
+    file:write("fillType;title;originalPer1000;appliedPer1000;averagePer1000;changed;factors;stations\n")
     for _, fillType in ipairs(g_fillTypeManager:getFillTypes()) do
         if fillType.pricePerLiter > 0 then
             local data = self.applied[fillType.index]
@@ -376,11 +395,12 @@ function SellPrices:dump()
             end
             local stations = stationsByFillType[fillType.index] or {}
             table.sort(stations)
-            file:write(string.format("%s;%s;%.1f;%.1f;%s;%s;%s\n",
+            file:write(string.format("%s;%s;%.1f;%.1f;%.1f;%s;%s;%s\n",
                 fillType.name,
                 string.gsub(fillType.title or "", ";", ","),
                 (data ~= nil and data.origPrice or fillType.pricePerLiter) * 1000,
                 fillType.pricePerLiter * 1000,
+                fillType.pricePerLiter * 1000 * SellPrices.getMeanFactor(fillType.economy.factors),
                 data ~= nil and "yes" or "",
                 table.concat(factors, " "),
                 table.concat(stations, " | ")))

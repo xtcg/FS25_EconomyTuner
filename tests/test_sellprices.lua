@@ -63,6 +63,21 @@ do
     check("original price remembered", near(SellPrices:getOriginalPrice(wheat().index), 0.337))
 end
 
+-- average -----------------------------------------------------------------------------------------
+do
+    local curve = "0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 2"
+    writeUserConfig(config("", '<fillType name="WHEAT" average="400"/><fillType name="MILK" average="600" factors="' .. curve .. '"/>'))
+    startSession(EconomicDifficulty.HARD)
+    local wheatMean = SellPrices.getMeanFactor(wheat().economy.factors)
+    check("average divides by the original curve mean", near(wheat().pricePerLiter * wheatMean, 0.400, 1e-6) and not near(wheat().pricePerLiter, 0.400, 1e-6))
+    check("average uses the new curve when factors given", near(milk().pricePerLiter, 0.6 / (12.5 / 12), 1e-6))
+    writeUserConfig(config("", '<fillType name="WHEAT" price="400" average="500"/>'))
+    LOG = {}
+    startSession(EconomicDifficulty.HARD)
+    check("price wins over average", near(wheat().pricePerLiter, 0.4) and logContains("more than one"))
+    writeUserConfig(TABLE)
+end
+
 -- not HARD -----------------------------------------------------------------------------------------
 do
     LOG = {}
@@ -173,6 +188,6 @@ do
     local text = f and f:read("a") or ""
     if f then f:close() end
     check("dump written", result:find("written") ~= nil)
-    check("dump has original and applied price", text:find("WHEAT;WHEAT;337.0;400.0;yes;", 1, true) ~= nil)
+    check("dump has original and applied price", text:find("WHEAT;WHEAT;337.0;400.0;400.3;yes;", 1, true) ~= nil)
     check("dump lists stations with scale", text:find("dealer x1.20", 1, true) ~= nil)
 end

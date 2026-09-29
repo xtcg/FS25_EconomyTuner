@@ -8,9 +8,13 @@
 
     price   = sell price in EUR per 1000 L (per 1000 pieces for piece goods) on HARD economic difficulty,
               i.e. fillType pricePerLiter x 1000, before seasonal factor and selling-point priceScale.
+    average = alternative to price: the year-round average (EUR per 1000 L). The base price is set to
+              average / mean(factors), so the 12 seasonal prices average out to this value.
     scale   = alternative to price: multiply the price the game/map defines (e.g. scale="0.5").
     factors = optional, 12 seasonal factors in period order 1..12 (early spring .. late winter),
               replaces the curve of the base game / map. Without it the original curve is kept.
+              Seasonal price at the start of period n = price x factor n; between periods the game
+              interpolates smoothly. For most crops the factors average ~1.0, so price ~ yearly average.
 
     Selling points keep their own priceScale (e.g. HB bales x0.8, root crops x1.2 at the animal dealer).
     <station> overrides it for one selling point and fillType; xmlFilename is matched as a path suffix,
