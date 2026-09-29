@@ -39,6 +39,11 @@ local function normalizePath(path)
     return string.lower((string.gsub(path or "", "\\", "/")))
 end
 
+-- XML values are read as float32 (0.337 -> 0.33700001), so equal prices differ by ~1e-8.
+local function isSame(a, b)
+    return math.abs(a - b) <= 1e-6 * math.max(math.abs(a), math.abs(b), 1e-3)
+end
+
 local function endsWith(str, suffix)
     return suffix ~= "" and string.sub(str, -string.len(suffix)) == suffix
 end
@@ -203,9 +208,9 @@ function SellPrices:apply(keepHistory)
             end
             local factors = entry.factors or origFactors
 
-            local isChanged = math.abs(price - origPrice) > 1e-9
+            local isChanged = not isSame(price, origPrice)
             for period = 1, SellPrices.NUM_PERIODS do
-                isChanged = isChanged or math.abs((factors[period] or 1) - (origFactors[period] or 1)) > 1e-9
+                isChanged = isChanged or not isSame(factors[period] or 1, origFactors[period] or 1)
             end
 
             if isChanged then
@@ -323,7 +328,7 @@ function SellPrices:reload()
 
     for _, fillType in ipairs(g_fillTypeManager:getFillTypes()) do
         local before = previous[fillType.index]
-        if before ~= nil and before > 0 and math.abs(fillType.pricePerLiter - before) > 1e-9 then
+        if before ~= nil and before > 0 and not isSame(fillType.pricePerLiter, before) then
             local ratio = fillType.pricePerLiter / before
             for period = 1, SellPrices.NUM_PERIODS do
                 fillType.economy.history[period] = fillType.economy.history[period] * ratio
@@ -486,7 +491,7 @@ function SellPrices.economyLoadFromXMLFile(economyManager, xmlFileHandle, key)
     for _, fillType in ipairs(g_fillTypeManager:getFillTypes()) do
         local current = fillType.pricePerLiter
         local previous = savedPrices[fillType.name] or SellPrices:getOriginalPrice(fillType.index) or current
-        if previous > 0 and math.abs(current - previous) > 1e-9 then
+        if previous > 0 and not isSame(current, previous) then
             local ratio = current / previous
             for period = 1, SellPrices.NUM_PERIODS do
                 if fillType.economy.history[period] ~= nil then

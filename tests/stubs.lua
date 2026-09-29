@@ -101,7 +101,7 @@ local function makeXML(nodes, counts)
             return v:lower() == "true"
         end,
         setString = function(_, key, v) set(key, v) end,
-        setFloat = function(_, key, v) set(key, v) end,
+        setFloat = function(_, key, v) set(key, f32(v)) end,
         iterate = function(_, key, fn)
             local parent, last = key:match("^(.*)%.([^%.]+)$")
             local base = parent ~= nil and normalize(parent) .. "." .. last or key
@@ -151,10 +151,14 @@ XMLFile = {
 ---------------------------------------------------------------------------------------------------
 -- Fill types
 
+-- The engine reads XML floats as float32.
+function f32(x) return (string.unpack("f", string.pack("f", x))) end
+
 local function newFillType(index, name, price, factors)
+    price = f32(price)
     local ft = { index = index, name = name, title = name, pricePerLiter = price, economy = { factors = {}, history = {} } }
     for p = 1, 12 do
-        ft.economy.factors[p] = factors ~= nil and factors[p] or 1
+        ft.economy.factors[p] = factors ~= nil and f32(factors[p]) or 1
         ft.economy.history[p] = ft.economy.factors[p] * price
     end
     return ft

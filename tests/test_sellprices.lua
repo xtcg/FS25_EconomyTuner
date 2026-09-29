@@ -38,6 +38,7 @@ do
     check("default table is a no-op for WHEAT", near(wheat().pricePerLiter, 0.337))
     check("default table changes nothing", table.size(SellPrices.applied) == 0)
     check("log counts unchanged entries", logContains("0 fillTypes changed, 3 already at table value"))
+    check("float32 game price counts as unchanged", wheat().pricePerLiter ~= 0.337 and SellPrices:getOriginalPrice(wheat().index) == nil)
 end
 
 -- price, scale, factors on HARD ----------------------------------------------------------------------
