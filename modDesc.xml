@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<modDesc descVersion="110">
+    <author>xtcg</author>
+    <version>0.1.0.0</version>
+    <title>
+        <en>Sell Price Table</en>
+        <de>Verkaufspreistabelle</de>
+    </title>
+    <description>
+        <en><![CDATA[Sets the sell price of any fillType (base game, map or mods) from one editable XML table.
+
+Prices are the HARD difficulty in-game price per 1000 L. The mod only applies them on HARD economic difficulty unless configured otherwise.
+
+- Table: modSettings/FS25_SellPrices/prices.xml (created on first start)
+- Optional seasonal factor curves and per-selling-point priceScale overrides
+- Buying prices of changed fillTypes stay at the original value
+- Saved price history and price fluctuation curves are rescaled to the new prices
+- Console: spDump writes all prices and selling points to priceDump.csv, spReload applies an edited table live]]></en>
+    </description>
+    <iconFilename>icon_SellPrices.dds</iconFilename>
+    <multiplayer supported="true"/>
+
+    <extraSourceFiles>
+        <sourceFile filename="scripts/SellPrices.lua"/>
+    </extraSourceFiles>
+</modDesc>

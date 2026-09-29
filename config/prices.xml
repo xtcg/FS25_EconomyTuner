@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+    FS25_SellPrices price table
+
+    On first start this file is copied to  <user>/Documents/My Games/FarmingSimulator2025/modSettings/FS25_SellPrices/prices.xml
+    Edit that copy; the one inside the mod zip is only the default. After editing, restart the savegame,
+    or type  spReload  in the developer console to apply it live (server / single player).
+
+    price   = sell price in EUR per 1000 L (per 1000 pieces for piece goods) on HARD economic difficulty,
+              i.e. fillType pricePerLiter x 1000, before seasonal factor and selling-point priceScale.
+    scale   = alternative to price: multiply the price the game/map defines (e.g. scale="0.5").
+    factors = optional, 12 seasonal factors in period order 1..12 (early spring .. late winter),
+              replaces the curve of the base game / map. Without it the original curve is kept.
+
+    Selling points keep their own priceScale (e.g. HB bales x0.8, root crops x1.2 at the animal dealer).
+    <station> overrides it for one selling point and fillType; xmlFilename is matched as a path suffix,
+    run spDump to see the xmlFilename of every selling point.
+
+    Snapshot: base game 1.23.1 + Hof Bergmann 1.5.0.0 Beta2 (2026-09-29). Values below equal the current
+    game prices, so this table changes nothing until you edit it.  "/t" comments = EUR per tonne.
+-->
+<sellPrices>
+    <!--
+        requireHardDifficulty  only apply on HARD; other difficulties would multiply these prices by 1.8 / 3.
+        keepBuyPrices          buying stations and consumption costs keep the original price of changed fillTypes.
+        rescaleHistory         rescale the saved price history (economy.xml) to the new prices.
+        dumpOnStart            write modSettings/FS25_SellPrices/priceDump.csv on every savegame start.
+    -->
+    <settings requireHardDifficulty="true" keepBuyPrices="true" rescaleHistory="true" dumpOnStart="true"/>
+
+    <!-- ===== 谷物 / 油料 / 豆类 Grains, oilseeds, pulses ===== -->
+    <fillType name="WHEAT"                   price="337"/>     <!-- base, 432/t -->
+    <fillType name="BARLEY"                  price="313"/>     <!-- base, 460/t -->
+    <fillType name="OAT"                     price="532"/>     <!-- base, 1064/t -->
+    <fillType name="RYE"                     price="225"/>     <!-- HB, 315/t -->
+    <fillType name="CANOLA"                  price="603"/>     <!-- base, 1005/t -->
+    <fillType name="SUNFLOWER"               price="673"/>     <!-- base, 1923/t -->
+    <fillType name="SOYBEAN"                 price="778"/>     <!-- base, 1111/t -->
+    <fillType name="MAIZE"                   price="380"/>     <!-- base, 475/t -->
+    <fillType name="SORGHUM"                 price="430"/>     <!-- base, 506/t -->
+    <fillType name="RICELONGGRAIN"           price="530"/>     <!-- base, 688/t -->
+    <fillType name="RICE"                    price="1100"/>    <!-- base, 1392/t -->
+    <fillType name="PEA"                     price="1040"/>    <!-- base, 1300/t -->
+    <fillType name="GREENBEAN"               price="720"/>     <!-- base, 857/t -->
+    <fillType name="COTTON"                  price="1252"/>    <!-- base -->
+
+    <!-- ===== 块根 / 糖料 Root crops, sugar ===== -->
+    <fillType name="POTATO"                  price="222"/>     <!-- base, 296/t -->
+    <fillType name="SUGARBEET"               price="172"/>     <!-- base, 246/t -->
+    <fillType name="SUGARBEET_CUT"           price="222"/>     <!-- base, 317/t -->
+    <fillType name="SUGARCANE"               price="119"/>     <!-- base -->
+    <fillType name="CARROT"                  price="132"/>     <!-- base, 206/t -->
+    <fillType name="PARSNIP"                 price="131"/>     <!-- base, 226/t -->
+    <fillType name="BEETROOT"                price="122"/>     <!-- base, 235/t -->
+
+    <!-- ===== 饲草 / 秸秆 Forage, straw (bulk and bales use the same fillType) ===== -->
+    <fillType name="GRASS_WINDROW"           price="45"/>      <!-- base, 150/t -->
+    <fillType name="DRYGRASS_WINDROW"        price="56"/>      <!-- base -->
+    <fillType name="CLOVER_WINDROW"          price="45"/>      <!-- HB, 150/t -->
+    <fillType name="SILAGE"                  price="121"/>     <!-- base, 269/t -->
+    <fillType name="STRAW"                   price="41"/>      <!-- base -->
+    <fillType name="CHAFF"                   price="42"/>      <!-- base, 140/t -->
+    <fillType name="FORAGE"                  price="124"/>     <!-- base, 413/t -->
+
+    <!-- ===== 蔬菜 / 特作 Vegetables, special crops ===== -->
+    <fillType name="SPINACH"                 price="220"/>     <!-- base, 286/t -->
+    <fillType name="LETTUCE"                 price="990"/>     <!-- base, 1414/t -->
+    <fillType name="TOMATO"                  price="500"/>     <!-- base, 714/t -->
+    <fillType name="CUCUMBER"                price="500"/>     <!-- HB -->
+    <fillType name="CAULIFLOWER"             price="1050"/>    <!-- HB, 3500/t -->
+    <fillType name="GARDEN_ONION"            price="880"/>     <!-- HB -->
+    <fillType name="SPRING_ONION"            price="450"/>     <!-- base, 643/t -->
+    <fillType name="GARLIC"                  price="450"/>     <!-- base, 450/t -->
+    <fillType name="CHILLI"                  price="450"/>     <!-- base, 450/t -->
+    <fillType name="NAPACABBAGE"             price="350"/>     <!-- base, 292/t -->
+    <fillType name="STRAWBERRY"              price="450"/>     <!-- base, 643/t -->
+    <fillType name="ENOKI"                   price="420"/>     <!-- base, 420/t -->
+    <fillType name="OYSTER"                  price="865"/>     <!-- base, 865/t -->
+    <fillType name="ASPARAGUSGREEN"          price="2000"/>    <!-- HB, 5000/t -->
+    <fillType name="ASPARAGUSGREEN_PACKED"   price="2300"/>    <!-- HB, 5750/t -->
+    <fillType name="ASPARAGUSWHITE"          price="2500"/>    <!-- HB, 6250/t -->
+    <fillType name="ASPARAGUSWHITE_PACKED"   price="2600"/>    <!-- HB, 6500/t -->
+    <fillType name="HOP"                     price="1000"/>    <!-- HB, 2000/t -->
+    <fillType name="HOPS"                    price="4000"/>    <!-- HB, 8000/t -->
+
+    <!-- ===== 果品 Fruit ===== -->
+    <fillType name="GRAPE"                   price="603"/>     <!-- base, 1005/t -->
+    <fillType name="OLIVE"                   price="603"/>     <!-- base, 1005/t -->
+    <fillType name="APPLE"                   price="550"/>     <!-- HB -->
+    <fillType name="CHERRY"                  price="804"/>     <!-- HB, 1608/t -->
+    <fillType name="CHERRYPACKED"            price="1300"/>    <!-- HB -->
+
+    <!-- ===== 奶 / 蛋 / 毛 / 蜜 Milk, eggs, fibre, honey ===== -->
+    <fillType name="MILK"                    price="700"/>     <!-- base, 680/t -->
+    <fillType name="BUFFALOMILK"             price="2500"/>    <!-- HB-modified, base 3500, 2427/t -->
+    <fillType name="GOATMILK"                price="1500"/>    <!-- HB-modified, base 2820, 1456/t -->
+    <fillType name="EGG"                     price="1120"/>    <!-- base, per 1000 pieces -->
+    <fillType name="EGG_HB"                  price="1120"/>    <!-- HB, per 1000 pieces -->
+    <fillType name="QUAILEGG"                price="2500"/>    <!-- HB, per 1000 pieces -->
+    <fillType name="WOOL"                    price="940"/>     <!-- base, per 1000 pieces -->
+    <fillType name="SHEEPWOOL_SHEARED"       price="240"/>     <!-- HB, 316/t -->
+    <fillType name="SHEEPWOOL_CLEANED"       price="1980"/>    <!-- HB, 3536/t -->
+    <fillType name="ALPACA_WOOL"             price="2940"/>    <!-- HB, 6391/t -->
+    <fillType name="GOOSEFEATHERS"           price="3100"/>    <!-- HB, 3100/t -->
+    <fillType name="HONEY"                   price="3000"/>    <!-- HB-modified, base 1000, 2069/t -->
+
+    <!-- ===== 肉 / 鱼 Meat, fish ===== -->
+    <fillType name="BEEFMEAT"                price="1800"/>    <!-- HB, 1800/t -->
+    <fillType name="PORKMEAT"                price="1500"/>    <!-- HB, 1500/t -->
+    <fillType name="SHEEPGOATMEAT"           price="2300"/>    <!-- HB, 2300/t -->
+    <fillType name="POULTRYMEAT"             price="1300"/>    <!-- HB, 1300/t -->
+    <fillType name="RABBITMEAT"              price="1800"/>    <!-- HB, 1800/t -->
+    <fillType name="GOOSEMEAT"               price="2100"/>    <!-- HB, 2100/t -->
+    <fillType name="HORSEMEAT"               price="2100"/>    <!-- HB, 2100/t -->
+    <fillType name="DEERMEAT"                price="3000"/>    <!-- HB, 3000/t -->
+    <fillType name="WILDBOARMEAT"            price="3000"/>    <!-- HB, 3000/t -->
+    <fillType name="FISH"                    price="3000"/>    <!-- HB, 3000/t -->
+    <fillType name="SMOKEDFISH"              price="4000"/>    <!-- HB, 4000/t -->
+
+    <!-- ===== 食品加工品 Processed food (base-game and HB productions) ===== -->
+    <fillType name="FLOUR"                   price="690"/>     <!-- base, 1725/t -->
+    <fillType name="BREAD"                   price="1650"/>    <!-- base -->
+    <fillType name="CAKE"                    price="3300"/>    <!-- base, 3882/t -->
+    <fillType name="CEREAL"                  price="3800"/>    <!-- base, 7600/t -->
+    <fillType name="BUTTER"                  price="3800"/>    <!-- HB-modified, base 1120, 4222/t -->
+    <fillType name="CHEESE"                  price="2300"/>    <!-- HB-modified, base 1800, 4600/t -->
+    <fillType name="GOATCHEESE"              price="2890"/>    <!-- HB-modified, base 1760, 5780/t -->
+    <fillType name="BUFFALOMOZZARELLA"       price="7500"/>    <!-- base, 15000/t -->
+    <fillType name="MILK_BOTTLED"            price="1600"/>    <!-- HB-modified, base 580, 1553/t -->
+    <fillType name="MILK_BOTTLED_SOLO"       price="2300"/>    <!-- HB, 2300/t -->
+    <fillType name="GOATMILK_BOTTLED"        price="2110"/>    <!-- base, 2049/t -->
+    <fillType name="BUFFALOMILK_BOTTLED"     price="2490"/>    <!-- base, 2417/t -->
+    <fillType name="SUGAR"                   price="500"/>     <!-- base, 500/t -->
+    <fillType name="CHOCOLATE"               price="2000"/>    <!-- base, 2000/t -->
+    <fillType name="CANOLA_OIL"              price="1640"/>    <!-- base, 1822/t -->
+    <fillType name="SUNFLOWER_OIL"           price="1780"/>    <!-- base, 1978/t -->
+    <fillType name="OLIVE_OIL"               price="2440"/>    <!-- base, 2711/t -->
+    <fillType name="RICE_OIL"                price="1780"/>    <!-- base, 1978/t -->
+    <fillType name="GRAPEJUICE"              price="1650"/>    <!-- base, 1650/t -->
+    <fillType name="GRAPEJUICE_PACKED"       price="1850"/>    <!-- HB, 1850/t -->
+    <fillType name="APPLEJUICE"              price="1000"/>    <!-- HB -->
+    <fillType name="APPLESAUCE"              price="2550"/>    <!-- HB -->
+    <fillType name="RAISINS"                 price="1630"/>    <!-- base, 2629/t -->
+    <fillType name="POTATOCHIPS"             price="1500"/>    <!-- base, 5000/t -->
+    <fillType name="CANNED_PEAS"             price="2596"/>    <!-- base, 3245/t -->
+    <fillType name="JARRED_GREENBEAN"        price="1886"/>    <!-- base, 2358/t -->
+    <fillType name="PRESERVEDBEETROOT"       price="560"/>     <!-- base, 700/t -->
+    <fillType name="PRESERVEDCARROTS"        price="580"/>     <!-- base, 725/t -->
+    <fillType name="PRESERVEDPARSNIP"        price="578"/>     <!-- base, 722/t -->
+    <fillType name="SOUPCANSBEETROOT"        price="845"/>     <!-- base, 1056/t -->
+    <fillType name="SOUPCANSCARROTS"         price="885"/>     <!-- base, 1106/t -->
+    <fillType name="SOUPCANSMIXED"           price="940"/>     <!-- base, 1175/t -->
+    <fillType name="SOUPCANSPARSNIP"         price="880"/>     <!-- base, 1100/t -->
+    <fillType name="SOUPCANSPOTATO"          price="1245"/>    <!-- base, 1556/t -->
+    <fillType name="SPINACH_BAGS"            price="775"/>     <!-- base, 969/t -->
+    <fillType name="FERMENTEDNAPACABBAGE"    price="650"/>     <!-- base, 812/t -->
+    <fillType name="NOODLESOUP"              price="1550"/>    <!-- base, 1938/t -->
+    <fillType name="RICEFLOUR"               price="910"/>     <!-- base, 2275/t -->
+    <fillType name="RICEROLLS"               price="1550"/>    <!-- base, 5167/t -->
+    <fillType name="RICE_BAGS"               price="1464"/>    <!-- base, 2440/t -->
+    <fillType name="RICE_BOXES"              price="2730"/>    <!-- base, 3900/t -->
+    <fillType name="BARRELED_BEER"           price="1200"/>    <!-- HB, 1200/t -->
+    <fillType name="PALLET_BEER"             price="1000"/>    <!-- HB, 1000/t -->
+    <fillType name="WINE_CRATE"              price="2500"/>    <!-- HB, 2500/t -->
+    <fillType name="WINE_CRATESPALLET"       price="2500"/>    <!-- HB, 2500/t -->
+    <fillType name="ROASTED_PIG"             price="1400"/>    <!-- HB, 1400/t -->
+
+    <!-- ===== Selling point overrides (examples) =====
+    <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>
+    -->
+</sellPrices>
