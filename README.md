@@ -19,6 +19,8 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 
 装上即生效：mod 里自带一张默认表（`config/economy.xml`），每次启动都读，随 mod 更新。默认表是本体 1.23.1 + Hof Bergmann 1.5.0.0 Beta2 的价格快照，表里的价格是玩家在游戏里实际看到的价格，**在 EASY、NORMAL、HARD 下都成立**（mod 会把难度倍率除掉，见下面的 `normalizeDifficulty`）。
 
+默认表已按《非草料价格与产量调整方案》（2026-10-04）填好：粮油、甜菜、牛奶售价，粮油产量系数，各作物耗种量，种子（BayWa 成交 300 £/1000 L）和固体化肥（BayWa 成交 350 £/1000 L）买价。草料、秸秆、块根和蔬菜产量、肉价未改，详见 `config/economy.xml` 里的注释。
+
 ### 自己改：三层覆盖
 
 不要改 mod 里的默认表。自己的改动写进下面的覆盖文件，只写想改的条目，其余沿用下层。优先级从低到高：
@@ -142,6 +144,8 @@ Vehicles (prices, upkeep, leasing) and animal output are not covered.
 2. Enable **Economy Tuner** for your savegame.
 
 It works right away: the mod ships a default table (`config/economy.xml`) that is read on every start and updated with the mod. It is a snapshot of base game 1.23.1 and Hof Bergmann 1.5.0.0 Beta2. Table prices are the prices the player sees, and **hold on EASY, NORMAL and HARD** (the mod divides the difficulty multiplier out, see `normalizeDifficulty`).
+
+The default table is filled in according to the non-forage price and yield plan of 2026-10-04: sell prices of grains, oilseeds, sugar beet and milk, yield factors of grains and oilseeds, seed usage per crop, and buy prices of seed (300 per 1000 L at BayWa) and solid fertilizer (350 per 1000 L at BayWa). Forage, straw, root-crop and vegetable yields and meat prices are unchanged; see the comments in `config/economy.xml`.
 
 ### Your own changes: three override layers
 

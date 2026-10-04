@@ -44,11 +44,16 @@ end
 do
     local cfg = EconomyTuner.readConfig(SHIPPED_FILE)
     check("default table parses", cfg ~= nil)
-    check("default table has 121 fillTypes", table.size(cfg.fillTypes) == 121)
+    check("default table has 124 fillTypes", table.size(cfg.fillTypes) == 124)
     check("default WHEAT is 337", near(cfg.fillTypes.WHEAT.price, 337))
     check("default settings read", cfg.settings.normalizeDifficulty == true and cfg.settings.dumpOnStart == false)
     check("default example station is commented out", #cfg.stations == 0)
-    check("default example fruitType is commented out", table.size(cfg.fruitTypes) == 0)
+    check("default MILK / RAWMILK follow the plan", near(cfg.fillTypes.MILK.price, 907) and near(cfg.fillTypes.RAWMILK.price, 907))
+    check("default wheat stays, potato stays", near(cfg.fillTypes.POTATO.price, 222) and cfg.fruitTypes.WHEAT == nil)
+    check("default seed and fertilizer buy prices undo the BayWa scale", near(cfg.fillTypes.SEEDS.buy * 0.95, 300, 1e-4) and near(cfg.fillTypes.FERTILIZER.buy * 0.70, 350, 1e-4))
+    check("default yield: barley / maize", near(cfg.fruitTypes.BARLEY.yieldScale, 0.957077) and near(cfg.fruitTypes.MAIZE.yieldScale, 1.179008))
+    check("default seed: wheat unchanged, canola x8.16", cfg.fruitTypes.WHEAT == nil and near(cfg.fruitTypes.CANOLA.seedScale, 400 / 49, 1e-5))
+    check("default has no grass / root yield entries", cfg.fruitTypes.GRASS == nil and cfg.fruitTypes.POTATO == nil and cfg.fruitTypes.SUGARBEET.yieldScale == nil)
 end
 
 -- works with no user file: defaults are read from the mod, global template is created --------------------
@@ -58,8 +63,9 @@ do
     check("global override template created", fileExists(g_currentModSettingsDirectory .. "global.xml"))
     check("template is a valid empty table", EconomyTuner.readConfig(g_currentModSettingsDirectory .. "global.xml") ~= nil)
     check("default table is a no-op for WHEAT on HARD", near(wheat().pricePerLiter, 0.337))
-    check("default table changes nothing on HARD", table.size(EconomyTuner.applied) == 0)
-    check("log counts unchanged entries", logContains("0 changed, 3 already at table value"))
+    check("default table changes only MILK on HARD", table.size(EconomyTuner.applied) == 1 and near(milk().pricePerLiter, 0.907))
+    check("default table: seed buy via BayWa scale is 300", near(BuyingStation.getEffectiveFillTypePrice({}, seeds().index) * 0.95, 0.300, 1e-6))
+    check("log counts entries", logContains("1 changed, 3 already at table value"))
     check("float32 game price counts as unchanged", wheat().pricePerLiter ~= 0.337 and EconomyTuner:getOriginalPrice(wheat().index) == nil)
 
     -- a table edited in the mod is picked up without any copy in modSettings

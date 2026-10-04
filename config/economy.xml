@@ -10,7 +10,7 @@
     in the developer console to apply it live (server / single player). etDump writes priceDump.csv and
     yieldDump.csv (every fillType / fruitType with name, game value and applied value).
 
-    ---- <fillType name="..."> ----
+    == <fillType name="..."> ==
     price    = sell price in EUR per 1000 L (per 1000 pieces for piece goods) as the player sees it, before
                seasonal factor and selling-point priceScale. With normalizeDifficulty the mod divides the
                difficulty multiplier out, so the value holds on EASY / NORMAL / HARD alike.
@@ -26,20 +26,20 @@
                changed fillType stays at the original game price (keepBuyPrices).
     buyScale = alternative to buy: multiply the original game price.
 
-    ---- <station xmlFilename="..." fillType="..." priceScale="..."/> ----
+    == <station xmlFilename="..." fillType="..." priceScale="..."/> ==
     Selling points keep their own priceScale (e.g. HB bales x0.8, root crops x1.2 at the animal dealer).
     <station> overrides it for one selling point and fillType; xmlFilename is matched as a path suffix,
     run etDump to see the xmlFilename of every selling point.
 
-    ---- <fruitType name="..."> ----
+    == <fruitType name="..."> ==
     yield        = harvest yield in litres per ha (the game stores litersPerSqm x 10000; see yieldDump.csv).
     yieldScale   = alternative to yield: multiply the game's yield (e.g. 1.2 = +20 %).
                    Straw from combines is derived from the grain ratio and does not change with yield.
     windrowScale = multiply the windrow yield (hay, silage and straw swaths) where the crop has one.
     seedScale    = multiply the seed usage per ha.
 
-    Snapshot: base game 1.23.1 + Hof Bergmann 1.5.0.0 Beta2 (2026-09-29). The prices below equal the HARD game prices,
-    so on HARD this table changes nothing until the target values are put in.  "/t" comments = EUR per tonne.
+    Snapshot: base game 1.23.1 + Hof Bergmann 1.5.0.0 Beta2 (2026-09-29). Entries marked "plan 2026-10-04" follow
+    FS25_非草料价格与产量调整方案.md; all other prices equal the HARD game prices.  "/t" comments = EUR per tonne.
 -->
 <economyTuner>
     <!--
@@ -52,20 +52,38 @@
     -->
     <settings normalizeDifficulty="true" keepBuyPrices="true" rescaleHistory="true" dumpOnStart="false"/>
 
-    <!-- ===== Harvest yield and seed usage (example, remove the comment markers) =====
-    <fruitType name="WHEAT" yieldScale="1.0" seedScale="1.0"/>
-    -->
+    <!-- ===== 产量与耗种量 Yield and seed usage (plan 2026-10-04) =====
+        yieldScale: relative to the game's own yield, same soil / management (WHEAT stays 1.0).
+        seedScale : seed litres per ha = game value x scale; with SEEDS at 300 this gives the planned seed cost
+                    (e.g. WHEAT 308 L x 0.30 = 92.4 per ha, MAIZE 600 L x 0.30 = 180).
+        Not changed on purpose: root crops, pea and vegetable yields (conditional targets, not verified),
+        POTATO / SUGARCANE seed (own fillType), spinach yield, all grass / forage / straw. -->
+    <fruitType name="BARLEY"    yieldScale="0.957077"/>
+    <fruitType name="OAT"       yieldScale="1.583263"/>
+    <fruitType name="RYE"       yieldScale="0.809901" seedScale="2.433090"/>
+    <fruitType name="CANOLA"    yieldScale="0.934163" seedScale="8.163265"/>
+    <fruitType name="SUNFLOWER" yieldScale="1.302439" seedScale="3.496503"/>
+    <fruitType name="SOYBEAN"   yieldScale="0.881524" seedScale="2.336449"/>
+    <fruitType name="MAIZE"     yieldScale="1.179008" seedScale="11.320755"/>
+    <fruitType name="SORGHUM"   yieldScale="0.896385" seedScale="10.000000"/>
+    <fruitType name="PEA"       seedScale="2.000000"/>
+    <fruitType name="GREENBEAN" seedScale="2.142857"/>
+    <fruitType name="SUGARBEET" seedScale="14.705882"/>
+    <fruitType name="CARROT"    seedScale="60.000000"/>
+    <fruitType name="PARSNIP"   seedScale="60.000000"/>
+    <fruitType name="BEETROOT"  seedScale="11.250000"/>
+    <fruitType name="SPINACH"   seedScale="35.000000"/>
 
     <!-- ===== 谷物 / 油料 / 豆类 Grains, oilseeds, pulses ===== -->
     <fillType name="WHEAT"                   price="337"/>     <!-- base, 432/t -->
-    <fillType name="BARLEY"                  price="313"/>     <!-- base, 460/t -->
-    <fillType name="OAT"                     price="532"/>     <!-- base, 1064/t -->
-    <fillType name="RYE"                     price="225"/>     <!-- HB, 315/t -->
-    <fillType name="CANOLA"                  price="603"/>     <!-- base, 1005/t -->
-    <fillType name="SUNFLOWER"               price="673"/>     <!-- base, 1923/t -->
-    <fillType name="SOYBEAN"                 price="778"/>     <!-- base, 1111/t -->
-    <fillType name="MAIZE"                   price="380"/>     <!-- base, 475/t -->
-    <fillType name="SORGHUM"                 price="430"/>     <!-- base, 506/t -->
+    <fillType name="BARLEY"                  price="257"/>     <!-- plan 2026-10-04, was 313 -->
+    <fillType name="OAT"                     price="194"/>     <!-- plan 2026-10-04, was 532 -->
+    <fillType name="RYE"                     price="270"/>     <!-- plan 2026-10-04, was 225 -->
+    <fillType name="CANOLA"                  price="518"/>     <!-- plan 2026-10-04, was 603 -->
+    <fillType name="SUNFLOWER"               price="318"/>     <!-- plan 2026-10-04, was 673 -->
+    <fillType name="SOYBEAN"                 price="605"/>     <!-- plan 2026-10-04, was 778 -->
+    <fillType name="MAIZE"                   price="346"/>     <!-- plan 2026-10-04, was 380 -->
+    <fillType name="SORGHUM"                 price="367"/>     <!-- plan 2026-10-04, was 430 -->
     <fillType name="RICELONGGRAIN"           price="530"/>     <!-- base, 688/t -->
     <fillType name="RICE"                    price="1100"/>    <!-- base, 1392/t -->
     <fillType name="PEA"                     price="1040"/>    <!-- base, 1300/t -->
@@ -74,8 +92,8 @@
 
     <!-- ===== 块根 / 糖料 Root crops, sugar ===== -->
     <fillType name="POTATO"                  price="222"/>     <!-- base, 296/t -->
-    <fillType name="SUGARBEET"               price="172"/>     <!-- base, 246/t -->
-    <fillType name="SUGARBEET_CUT"           price="222"/>     <!-- base, 317/t -->
+    <fillType name="SUGARBEET"               price="60"/>     <!-- plan 2026-10-04, was 172 -->
+    <fillType name="SUGARBEET_CUT"           price="68"/>     <!-- plan 2026-10-04, was 222 -->
     <fillType name="SUGARCANE"               price="119"/>     <!-- base -->
     <fillType name="CARROT"                  price="132"/>     <!-- base, 206/t -->
     <fillType name="PARSNIP"                 price="131"/>     <!-- base, 226/t -->
@@ -119,7 +137,8 @@
     <fillType name="CHERRYPACKED"            price="1300"/>    <!-- HB -->
 
     <!-- ===== 奶 / 蛋 / 毛 / 蜜 Milk, eggs, fibre, honey ===== -->
-    <fillType name="MILK"                    price="700"/>     <!-- base, 680/t -->
+    <fillType name="MILK"                    price="907"/>     <!-- plan 2026-10-04, was 700 -->
+    <fillType name="RAWMILK"                 price="907"/>     <!-- MVB raw milk, same as MILK; plan 2026-10-04, was 700 -->
     <fillType name="BUFFALOMILK"             price="2500"/>    <!-- HB-modified, base 3500, 2427/t -->
     <fillType name="GOATMILK"                price="1500"/>    <!-- HB-modified, base 2820, 1456/t -->
     <fillType name="EGG"                     price="1120"/>    <!-- base, per 1000 pieces -->
@@ -192,6 +211,13 @@
     <fillType name="WINE_CRATE"              price="2500"/>    <!-- HB, 2500/t -->
     <fillType name="WINE_CRATESPALLET"       price="2500"/>    <!-- HB, 2500/t -->
     <fillType name="ROASTED_PIG"             price="1400"/>    <!-- HB, 1400/t -->
+
+    <!-- ===== 买价 Buy prices (plan 2026-10-04) =====
+        Final price at the BayWa shop (the cheapest channel) = buy x channel priceScale:
+        seeds 315.789474 x 0.95 = 300 EUR/1000 L, solid fertilizer 500 x 0.70 = 350 EUR/1000 L.
+        Other channels keep their own scale (HB silo system x0.8, base lime station x0.8). -->
+    <fillType name="SEEDS"                   buy="315.789474"/>
+    <fillType name="FERTILIZER"              buy="500"/>
 
     <!-- ===== Selling point overrides (examples) =====
     <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>
