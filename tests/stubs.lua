@@ -1,4 +1,4 @@
--- Minimal stand-ins for the GIANTS engine pieces SellPrices touches.
+-- Minimal stand-ins for the GIANTS engine pieces EconomyTuner touches.
 
 local noop = function() end
 
@@ -51,6 +51,7 @@ COMMANDS = {}
 function addConsoleCommand(name, _, fn, target) COMMANDS[name] = function() return target[fn](target) end end
 
 EconomicDifficulty = { EASY = 1, NORMAL = 2, HARD = 3 }
+FillType = { DIESEL = 100, DEF = 101 }
 
 RESULTS = {}
 function check(name, cond)
@@ -186,7 +187,7 @@ function newFillTypeManager()
 end
 
 ---------------------------------------------------------------------------------------------------
--- Stations / economy (only the parts SellPrices hooks or reads)
+-- Stations / economy (only the parts EconomyTuner hooks or reads)
 
 SellingStation = {}
 local SellingStation_mt = { __index = SellingStation }
@@ -235,14 +236,18 @@ end
 function SellingStation:getName() return self.name end
 function SellingStation:raiseDirtyFlags() self.dirty = self.dirty + 1 end
 
+EconomyManager = { PRICE_MULTIPLIER = { 3, 1.8, 1 }, COST_MULTIPLIER = { 0.4, 0.7, 1 } }
+
+-- as in the game: stations use the price multiplier (not for diesel / DEF), consumption the cost multiplier
 BuyingStation = {}
 function BuyingStation:getEffectiveFillTypePrice(index)
-    return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter
+    local multiplier = (index == FillType.DIESEL or index == FillType.DEF) and 1 or EconomyManager.PRICE_MULTIPLIER[g_currentMission.missionInfo.economicDifficulty]
+    return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter * multiplier
 end
 
-EconomyManager = {}
-function EconomyManager:getCostPerLiter(index)
-    return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter
+function EconomyManager:getCostPerLiter(index, useMultiplier)
+    local multiplier = useMultiplier == false and 1 or EconomyManager.COST_MULTIPLIER[g_currentMission.missionInfo.economicDifficulty]
+    return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter * multiplier
 end
 function EconomyManager:saveToXMLFile(handle, key)
     for i, ft in ipairs(g_fillTypeManager:getFillTypes()) do
@@ -257,36 +262,61 @@ function EconomyManager:loadFromXMLFile(handle, key)
     end
 end
 
+-- WHEAT 0.0008 l/m2 = 8000 l/ha, with windrow; BARLEY without windrow
+FruitTypeManager = {}
+function FruitTypeManager:loadMapData() return true end
+function FruitTypeManager:getFruitTypeByName(n) return self.byName[string.upper(n)] end
+function FruitTypeManager:getFruitTypeByIndex(i) return self.fruitTypes[i] end
+function FruitTypeManager:getFruitTypes() return self.fruitTypes end
+
+function newFruitTypeManager()
+    local m = setmetatable({ fruitTypes = {}, byName = {} }, { __index = FruitTypeManager })
+    for i, def in ipairs({ { "WHEAT", 0.8, 1.2, 0.0185 }, { "BARLEY", 0.7, nil, 0.017 } }) do
+        local ft = { index = i, name = def[1], literPerSqm = f32(def[2]), windrowLiterPerSqm = def[3] and f32(def[3]) or nil, seedUsagePerSqm = f32(def[4]) }
+        m.fruitTypes[i] = ft
+        m.byName[def[1]] = ft
+    end
+    return m
+end
+
 Mission00 = { onStartMission = noop }
 
 ---------------------------------------------------------------------------------------------------
 -- Session helpers
 
-g_currentModName = "FS25_SellPrices"
+g_currentModName = "FS25_EconomyTuner"
 
 -- Loads the mod once per Lua state, with modSettings in a temp dir.
 function loadMod()
-    g_currentModDirectory = REPO
-    g_currentModSettingsDirectory = TMP .. "modSettings/FS25_SellPrices/"
-    local chunk = assert(loadfile(REPO .. "scripts/SellPrices.lua"))
+    -- the mod runs from a temp copy so tests can swap its default table
+    g_currentModDirectory = TMP .. "mod/"
+    createFolder(g_currentModDirectory .. "config")
+    copyFile(REPO .. "config/economy.xml", g_currentModDirectory .. "config/economy.xml")
+    g_currentModSettingsDirectory = TMP .. "modSettings/FS25_EconomyTuner/"
+    local chunk = assert(loadfile(REPO .. "scripts/EconomyTuner.lua"))
     chunk()
 end
 
-function writeUserConfig(text)
+-- name defaults to the global override file
+function writeUserConfig(text, name)
     createFolder(g_currentModSettingsDirectory)
-    local f = assert(io.open(g_currentModSettingsDirectory .. "prices.xml", "w"))
+    local f = assert(io.open(g_currentModSettingsDirectory .. (name or "global.xml"), "w"))
     f:write(text)
     f:close()
 end
 
 -- Runs the map load sequence: fillTypes -> mod fillTypes -> stations. Returns the mission.
 -- stations = { name = { path, { {fillType, priceScale}, ... } } }
-function startSession(difficulty, stations)
+-- savegame = savegame folder name below TMP (default "savegame1")
+function startSession(difficulty, stations, savegame)
     g_fillTypeManager = newFillTypeManager()
-    local missionInfo = { economicDifficulty = difficulty or EconomicDifficulty.HARD }
+    g_fruitTypeManager = newFruitTypeManager()
+    local missionInfo = { economicDifficulty = difficulty or EconomicDifficulty.HARD, savegameDirectory = TMP .. (savegame or "savegame1") }
     g_fillTypeManager:loadMapData({}, missionInfo, "")
     g_fillTypeManager:loadModFillTypes()
+    g_fruitTypeManager:loadMapData({}, missionInfo, "")
 
+    SAVEGAME_DIRECTORY = missionInfo.savegameDirectory
     local mission = { missionInfo = missionInfo, economyManager = setmetatable({ sellingStations = {} }, { __index = EconomyManager }),
         getIsServer = function() return true end, stations = {} }
     g_currentMission = mission

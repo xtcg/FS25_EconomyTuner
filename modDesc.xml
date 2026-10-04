@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="110">
     <author>xtcg</author>
-    <version>0.1.2.0</version>
+    <version>0.2.0.0</version>
     <title>
-        <en>Sell Price Table</en>
-        <de>Verkaufspreistabelle</de>
+        <en>Economy Tuner</en>
+        <de>Wirtschafts-Tuner</de>
     </title>
     <description>
-        <en><![CDATA[Sets the sell price of any fillType (base game, map or mods) from one editable XML table.
+        <en><![CDATA[Tunes the farm economy of any fillType and fruitType (base game, map or mods) from XML tables.
 
-Prices are the HARD difficulty in-game price per 1000 L. The mod only applies them on HARD economic difficulty unless configured otherwise.
-
-- Table: modSettings/FS25_SellPrices/prices.xml (created on first start)
-- Optional seasonal factor curves and per-selling-point priceScale overrides
-- Buying prices of changed fillTypes stay at the original value
+- Sell prices, seasonal price curves, buy prices of seed / fertilizer / fuel
+- Harvest yield and seed usage per crop
+- Works out of the box with the table shipped in the mod; prices hold on every economic difficulty
+- Your own overrides: modSettings/FS25_EconomyTuner/global.xml (all savegames) and savegameN.xml (one savegame), or a FS25_EconomyTuner.xml inside the savegame folder
 - Saved price history and price fluctuation curves are rescaled to the new prices
-- Console: spDump writes all prices and selling points to priceDump.csv, spReload applies an edited table live]]></en>
+- Console: etDump writes all prices, selling points and yields to CSV, etReload applies edited tables live]]></en>
     </description>
-    <iconFilename>icon_SellPrices.dds</iconFilename>
+    <iconFilename>icon_EconomyTuner.dds</iconFilename>
     <multiplayer supported="true"/>
 
     <extraSourceFiles>
-        <sourceFile filename="scripts/SellPrices.lua"/>
+        <sourceFile filename="scripts/EconomyTuner.lua"/>
     </extraSourceFiles>
 </modDesc>

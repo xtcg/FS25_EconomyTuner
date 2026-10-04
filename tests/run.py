@@ -19,7 +19,7 @@ REPO = os.path.dirname(TESTS)
 def run(path):
     lua = lupa.LuaRuntime(unpack_returned_tuples=True)
     lua.globals().REPO = REPO + "/"
-    lua.globals().TMP = tempfile.mkdtemp(prefix="sellprices_") + "/"
+    lua.globals().TMP = tempfile.mkdtemp(prefix="economytuner_") + "/"
     with open(os.path.join(TESTS, "stubs.lua"), encoding="utf-8") as f:
         lua.execute(f.read())
     with open(path, encoding="utf-8") as f:
