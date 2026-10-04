@@ -57,7 +57,7 @@
         seedScale : seed litres per ha = game value x scale; with SEEDS at 300 this gives the planned seed cost
                     (e.g. WHEAT 308 L x 0.30 = 92.4 per ha, MAIZE 600 L x 0.30 = 180).
         Not changed on purpose: root crops, pea and vegetable yields (conditional targets, not verified),
-        POTATO / SUGARCANE seed (own fillType), spinach yield, all grass / forage / straw. -->
+        POTATO / SUGARCANE seed (own fillType), spinach yield, all grass / forage / straw yields. -->
     <fruitType name="BARLEY"    yieldScale="0.957077"/>
     <fruitType name="OAT"       yieldScale="1.583263"/>
     <fruitType name="RYE"       yieldScale="0.809901" seedScale="2.433090"/>
@@ -100,11 +100,11 @@
     <fillType name="BEETROOT"                price="122"/>     <!-- base, 235/t -->
 
     <!-- ===== 饲草 / 秸秆 Forage, straw (bulk and bales use the same fillType) ===== -->
-    <fillType name="GRASS_WINDROW"           price="45"/>      <!-- base, 150/t -->
-    <fillType name="DRYGRASS_WINDROW"        price="56"/>      <!-- base -->
-    <fillType name="CLOVER_WINDROW"          price="45"/>      <!-- HB, 150/t -->
-    <fillType name="SILAGE"                  price="121"/>     <!-- base, 269/t -->
-    <fillType name="STRAW"                   price="41"/>      <!-- base -->
+    <fillType name="GRASS_WINDROW"          price="16"/>     <!-- plan 2026-10-04, was 45 -->
+    <fillType name="DRYGRASS_WINDROW"       price="20"/>     <!-- plan 2026-10-04, was 56 -->
+    <fillType name="CLOVER_WINDROW"         price="18"/>     <!-- plan 2026-10-04, was 45 -->
+    <fillType name="SILAGE"                 price="44"/>     <!-- plan 2026-10-04, was 121 -->
+    <fillType name="STRAW"                  price="9"/>     <!-- plan 2026-10-04, was 41 -->
     <fillType name="CHAFF"                   price="42"/>      <!-- base, 140/t -->
     <fillType name="FORAGE"                  price="124"/>     <!-- base, 413/t -->
 

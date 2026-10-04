@@ -63,9 +63,9 @@ do
     check("global override template created", fileExists(g_currentModSettingsDirectory .. "global.xml"))
     check("template is a valid empty table", EconomyTuner.readConfig(g_currentModSettingsDirectory .. "global.xml") ~= nil)
     check("default table is a no-op for WHEAT on HARD", near(wheat().pricePerLiter, 0.337))
-    check("default table changes only MILK on HARD", table.size(EconomyTuner.applied) == 1 and near(milk().pricePerLiter, 0.907))
+    check("default table changes MILK and SILAGE on HARD", table.size(EconomyTuner.applied) == 2 and near(milk().pricePerLiter, 0.907) and near(silage().pricePerLiter, 0.044))
     check("default table: seed buy via BayWa scale is 300", near(BuyingStation.getEffectiveFillTypePrice({}, seeds().index) * 0.95, 0.300, 1e-6))
-    check("log counts entries", logContains("1 changed, 3 already at table value"))
+    check("log counts entries", logContains("2 changed, 2 already at table value"))
     check("float32 game price counts as unchanged", wheat().pricePerLiter ~= 0.337 and EconomyTuner:getOriginalPrice(wheat().index) == nil)
 
     -- a table edited in the mod is picked up without any copy in modSettings
