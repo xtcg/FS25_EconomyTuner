@@ -219,6 +219,11 @@
     <fillType name="SEEDS"                   buy="315.789474"/>
     <fillType name="FERTILIZER"              buy="500"/>
 
+    <!-- ===== 水 Water (plan 2026-10-04) =====
+        Game price 100 EUR/1000 L. price covers what the husbandry auto water supply pays (reads pricePerLiter
+        directly); buy covers water stations and water used by machines. HB farm water points stay free (priceScale 0). -->
+    <fillType name="WATER"                   price="4" buy="4"/>   <!-- was 100 -->
+
     <!-- ===== Selling point overrides (examples) =====
     <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>
     -->

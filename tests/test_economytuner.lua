@@ -44,7 +44,7 @@ end
 do
     local cfg = EconomyTuner.readConfig(SHIPPED_FILE)
     check("default table parses", cfg ~= nil)
-    check("default table has 124 fillTypes", table.size(cfg.fillTypes) == 124)
+    check("default table has 125 fillTypes", table.size(cfg.fillTypes) == 125)
     check("default WHEAT is 337", near(cfg.fillTypes.WHEAT.price, 337))
     check("default settings read", cfg.settings.normalizeDifficulty == true and cfg.settings.dumpOnStart == false)
     check("default example station is commented out", #cfg.stations == 0)
