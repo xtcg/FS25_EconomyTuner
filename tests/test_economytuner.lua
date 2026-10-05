@@ -357,4 +357,54 @@ do
     check("yield dump lists unchanged crops", text:find("BARLEY;7000;7000;0;0;170;170;", 1, true) ~= nil)
 end
 
+-- etCheck / etInfo ------------------------------------------------------------------------------------
+do
+    writeUserConfig(config("", [[
+<fillType name="WHEAT" price="400" buy="500"/>
+<fillType name="SILAGE" scale="0.5"/>
+<fillType name="MILK" average="600" factors="0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 2"/>
+<fillType name="SEEDS" buyScale="0.5"/>
+<fillType name="NOT_ON_MAP" price="10"/>
+<fruitType name="WHEAT" yieldScale="1.25" windrowScale="2" seedScale="0.5"/>
+<fruitType name="BARLEY" yield="9000"/>
+<station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.2"/>
+<station xmlFilename="no/such/station.xml" fillType="SILAGE" priceScale="0.2"/>
+]]))
+    for _, difficulty in ipairs({ EconomicDifficulty.HARD, EconomicDifficulty.EASY }) do
+        startSession(difficulty, STATIONS)
+        local result = COMMANDS.etCheck()
+        local f = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+        local text = f and f:read("a") or ""
+        if f then f:close() end
+        check("etCheck report written (difficulty " .. difficulty .. ")", text:find("checks,", 1, true) ~= nil)
+        check("etCheck: sell, buy, curve, yield all OK (difficulty " .. difficulty .. ")",
+            text:find("OK   WHEAT sell price", 1, true) and text:find("OK   WHEAT buy price at a x1 buying station", 1, true)
+            and text:find("OK   WHEAT buy price in running costs", 1, true) and text:find("OK   MILK yearly average", 1, true)
+            and text:find("OK   MILK seasonal factors", 1, true) and text:find("OK   BARLEY yield", 1, true)
+            and text:find("OK   WHEAT seed usage", 1, true) and text:find("OK   SEEDS buy price at a x1 buying station", 1, true))
+        check("etCheck: unknown names are skipped, not failed", text:find("SKIP NOT_ON_MAP", 1, true) ~= nil)
+        check("etCheck: only the unmatched station rule fails", result:find("1 failed", 1, true) ~= nil and text:find("FAIL no/such/station.xml", 1, true) ~= nil)
+    end
+
+    -- a wrong value in the running game is caught
+    startSession(EconomicDifficulty.HARD, STATIONS)
+    wheat().pricePerLiter = 0.123
+    local result = COMMANDS.etCheck()
+    check("etCheck catches a wrong price", result:find("FAIL WHEAT sell price", 1, true) ~= nil)
+
+    startSession(EconomicDifficulty.HARD, STATIONS)
+    local info = COMMANDS.etInfo("wheat")
+    check("etInfo shows prices and yield", info:find("fillType WHEAT", 1, true) and info:find("base 400.0 EUR/1000 L", 1, true)
+        and info:find("fruitType WHEAT", 1, true) and info:find("yield 10000 L/ha (game 8000)", 1, true))
+    check("etInfo lists selling stations", info:find("2 selling stations", 1, true) ~= nil)
+    check("etInfo explains itself without a name", COMMANDS.etInfo():find("usage", 1, true) ~= nil)
+    writeUserConfig(config('checkOnStart="true"', '<fillType name="WHEAT" price="400"/>'))
+    local mission = startSession(EconomicDifficulty.HARD, STATIONS)
+    LOG = {}
+    Mission00.onStartMission(mission)
+    check("checkOnStart runs the check at mission start", logContains("1 checks, 0 failed"))
+        check("etInfo unknown name", COMMANDS.etInfo("nope"):find("neither", 1, true) ~= nil)
+    writeUserConfig(TABLE)
+end
+
 restoreDefaultTable()

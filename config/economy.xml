@@ -49,6 +49,7 @@
         keepBuyPrices        buying stations and running costs keep the original price of changed fillTypes.
         rescaleHistory       rescale the saved price history (economy.xml) to the new prices.
         dumpOnStart          write priceDump.csv and yieldDump.csv on every savegame start.
+        checkOnStart         run the etCheck verification on every savegame start (result in log.txt and etCheck.txt).
     -->
     <settings normalizeDifficulty="true" keepBuyPrices="true" rescaleHistory="true" dumpOnStart="false"/>
 

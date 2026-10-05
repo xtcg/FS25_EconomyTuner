@@ -48,7 +48,7 @@ function copyFile(src, dst)
 end
 
 COMMANDS = {}
-function addConsoleCommand(name, _, fn, target) COMMANDS[name] = function() return target[fn](target) end end
+function addConsoleCommand(name, _, fn, target) COMMANDS[name] = function(...) return target[fn](target, ...) end end
 
 EconomicDifficulty = { EASY = 1, NORMAL = 2, HARD = 3 }
 FillType = { DIESEL = 100, DEF = 101 }

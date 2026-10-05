@@ -26,6 +26,7 @@ EconomyTuner.DEFAULT_CONFIG = "config/economy.xml"
 EconomyTuner.GLOBAL_CONFIG = "global.xml"
 EconomyTuner.PRICE_DUMP_FILENAME = "priceDump.csv"
 EconomyTuner.YIELD_DUMP_FILENAME = "yieldDump.csv"
+EconomyTuner.CHECK_FILENAME = "etCheck.txt"
 EconomyTuner.ROOT = "economyTuner"
 EconomyTuner.SAVE_KEY = ".economyTuner"
 -- marker written by FS25_SellPrices, the predecessor of this mod
@@ -39,7 +40,8 @@ EconomyTuner.DEFAULT_SETTINGS = {
     normalizeDifficulty = true,
     keepBuyPrices = true,
     rescaleHistory = true,
-    dumpOnStart = false
+    dumpOnStart = false,
+    checkOnStart = false
 }
 
 -- attributes of <fillType>; an upper layer that sets one of a group replaces the whole group
@@ -696,6 +698,234 @@ function EconomyTuner:dumpFruitTypes(filename)
 end
 
 ---------------------------------------------------------------------------------------------------
+-- In-game verification (etCheck / etInfo)
+---------------------------------------------------------------------------------------------------
+
+---Seasonal factor now, 1 when the environment is not available.
+local function getSeasonalFactor(fillType)
+    local environment = g_currentMission ~= nil and g_currentMission.environment or nil
+    if environment == nil or g_currentMission.economyManager == nil then
+        return 1
+    end
+    local period, alpha = environment:getPeriodAndAlphaIntoPeriod()
+    return g_currentMission.economyManager:getFillTypeSeasonalFactor(fillType, period, alpha)
+end
+
+---Price the game charges for fillTypeIndex at a buying station whose priceScale is 1.
+local function getStationBuyPrice(fillTypeIndex)
+    return BuyingStation.getEffectiveFillTypePrice({ fillTypePricesScale = { [fillTypeIndex] = 1 } }, fillTypeIndex)
+end
+
+---Runs every entry of the loaded table against the live game and reports expected vs actual.
+-- Returns the report lines, the number of checks and the number of failures.
+function EconomyTuner:check()
+    local lines, numChecks, numFailed = {}, 0, 0
+    local function add(text)
+        table.insert(lines, text)
+    end
+    local function verify(label, expected, actual, unit)
+        numChecks = numChecks + 1
+        local ok = expected ~= nil and actual ~= nil and math.abs(expected - actual) <= 1e-4 * math.max(math.abs(expected), 1e-3) + 1e-9
+        if not ok then
+            numFailed = numFailed + 1
+        end
+        add(string.format("%s %-44s expected %12.4f actual %12.4f %s", ok and "OK  " or "FAIL", label, expected or 0, actual or 0, unit or ""))
+    end
+
+    local config = self.config
+    if config == nil then
+        add("FAIL no table loaded (mod inactive?)")
+        return lines, 1, 1
+    end
+    local priceMultiplier = self:getDifficultyMultipliers()
+    local missionInfo = self:getMissionInfo()
+    add(string.format("tables: %s", table.concat(config.filenames, " < ")))
+    add(string.format("economic difficulty %s, price multiplier %.2f, normalizeDifficulty=%s",
+        tostring(missionInfo ~= nil and missionInfo.economicDifficulty or "?"), priceMultiplier, tostring(config.settings.normalizeDifficulty)))
+
+    local names = {}
+    for name, _ in pairs(config.fillTypes) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    add("--- fillTypes (EUR per 1000 L; sell = what the player sees before season / station scale) ---")
+    for _, name in ipairs(names) do
+        local entry = config.fillTypes[name]
+        local fillType = g_fillTypeManager:getFillTypeByName(name)
+        if fillType == nil then
+            add(string.format("SKIP %-44s not on this map", name))
+        else
+            local seen = fillType.pricePerLiter * (config.settings.normalizeDifficulty and priceMultiplier or 1) * 1000
+            local original = self.applied[fillType.index]
+            local origPrice = original ~= nil and original.origPrice or fillType.pricePerLiter
+            if entry.price ~= nil then
+                verify(name .. " sell price", entry.price, seen, "")
+            elseif entry.average ~= nil then
+                verify(name .. " yearly average", entry.average, seen * EconomyTuner.getMeanFactor(fillType.economy.factors), "")
+            elseif entry.scale ~= nil then
+                verify(name .. " sell price (original x scale)", origPrice * entry.scale * 1000, fillType.pricePerLiter * 1000, "")
+            end
+            if entry.factors ~= nil then
+                local worst = 0
+                for period = 1, EconomyTuner.NUM_PERIODS do
+                    worst = math.max(worst, math.abs((fillType.economy.factors[period] or 1) - entry.factors[period]))
+                end
+                verify(name .. " seasonal factors (max deviation)", 0, worst, "")
+            end
+
+            local stationMultiplier = (fillType.index == FillType.DIESEL or fillType.index == FillType.DEF) and 1 or priceMultiplier
+            local factor = getSeasonalFactor(fillType)
+            if entry.buy ~= nil then
+                local stationExpected = entry.buy * (config.settings.normalizeDifficulty and 1 or stationMultiplier)
+                verify(name .. " buy price at a x1 buying station", stationExpected, getStationBuyPrice(fillType.index) * 1000, "")
+                if g_currentMission.economyManager ~= nil then
+                    verify(name .. " buy price in running costs", entry.buy, g_currentMission.economyManager:getCostPerLiter(fillType.index, false) / factor * 1000, "")
+                end
+            elseif entry.buyScale ~= nil then
+                verify(name .. " buy price at a x1 buying station", origPrice * entry.buyScale * stationMultiplier * 1000, getStationBuyPrice(fillType.index) * 1000, "")
+            end
+        end
+    end
+
+    names = {}
+    for name, _ in pairs(config.fruitTypes) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    add("--- fruitTypes (litres per ha) ---")
+    for _, name in ipairs(names) do
+        local entry = config.fruitTypes[name]
+        local fruitType = g_fruitTypeManager:getFruitTypeByName(name)
+        local original = fruitType ~= nil and self.appliedFruits[fruitType.index] or nil
+        if fruitType == nil then
+            add(string.format("SKIP %-44s not on this map", name))
+        elseif original == nil then
+            numChecks = numChecks + 1
+            numFailed = numFailed + 1
+            add(string.format("FAIL %-44s listed in the table but never applied", name))
+        else
+            if entry.yield ~= nil then
+                verify(name .. " yield", entry.yield, fruitType.literPerSqm * 10000, "L/ha")
+            elseif entry.yieldScale ~= nil then
+                verify(name .. " yield (game x scale)", original.literPerSqm * entry.yieldScale * 10000, fruitType.literPerSqm * 10000, "L/ha")
+            end
+            if entry.windrowScale ~= nil and original.windrowLiterPerSqm ~= nil then
+                verify(name .. " windrow yield", original.windrowLiterPerSqm * entry.windrowScale * 10000, fruitType.windrowLiterPerSqm * 10000, "L/ha")
+            end
+            if entry.seedScale ~= nil then
+                verify(name .. " seed usage", original.seedUsagePerSqm * entry.seedScale * 10000, fruitType.seedUsagePerSqm * 10000, "L/ha")
+            end
+        end
+    end
+
+    add("--- selling station rules ---")
+    local stations = g_currentMission.economyManager ~= nil and g_currentMission.economyManager.sellingStations or {}
+    for _, rule in ipairs(config.stations) do
+        local matched = 0
+        for _, data in ipairs(stations) do
+            local path = data.station.economyTunerXmlFilename
+            if path ~= nil and endsWith(path, rule.path) then
+                matched = matched + 1
+            end
+        end
+        numChecks = numChecks + 1
+        if matched == 0 then
+            numFailed = numFailed + 1
+        end
+        add(string.format("%s %-44s matches %d selling stations (fillType %s, priceScale %.2f)", matched > 0 and "OK  " or "FAIL", rule.path, matched, rule.fillType, rule.priceScale))
+    end
+
+    add(string.format("--- %d checks, %d failed ---", numChecks, numFailed))
+    return lines, numChecks, numFailed
+end
+
+---Writes the check report to the log and to modSettings/<mod>/etCheck.txt.
+function EconomyTuner:consoleCommandCheck()
+    local lines, numChecks, numFailed = self:check()
+    for _, line in ipairs(lines) do
+        if string.sub(line, 1, 4) == "FAIL" then
+            warning("%s", line)
+        else
+            info("%s", line)
+        end
+    end
+
+    local directory = EconomyTuner.SETTINGS_DIRECTORY
+    local where = "log"
+    if directory ~= nil then
+        createFolder(directory)
+        local file = io.open(directory .. EconomyTuner.CHECK_FILENAME, "w")
+        if file ~= nil then
+            file:write(table.concat(lines, "\n"), "\n")
+            file:close()
+            where = "log and " .. directory .. EconomyTuner.CHECK_FILENAME
+        end
+    end
+    local failures = {}
+    for _, line in ipairs(lines) do
+        if string.sub(line, 1, 4) == "FAIL" then
+            table.insert(failures, line)
+        end
+    end
+    return string.format("%d checks, %d failed (details in %s)%s", numChecks, numFailed, where,
+        #failures > 0 and ("\n" .. table.concat(failures, "\n")) or "")
+end
+
+---Shows everything the mod knows about one fillType or fruitType: etInfo WHEAT
+function EconomyTuner:consoleCommandInfo(name)
+    if name == nil or name == "" then
+        return "usage: etInfo <FILLTYPE or FRUITTYPE name>, e.g. etInfo WHEAT"
+    end
+    name = string.upper(name)
+    local out = {}
+    local priceMultiplier, costMultiplier = self:getDifficultyMultipliers()
+
+    local fillType = g_fillTypeManager:getFillTypeByName(name)
+    if fillType ~= nil then
+        local data = self.applied[fillType.index]
+        local factor = getSeasonalFactor(fillType)
+        table.insert(out, string.format("fillType %s (index %d), table entry: %s", name, fillType.index, self.config ~= nil and self.config.fillTypes[name] ~= nil and "yes" or "no"))
+        table.insert(out, string.format("  pricePerLiter %.5f (game original %.5f)  -> base %.1f EUR/1000 L, x difficulty %.2f = %.1f", fillType.pricePerLiter,
+            data ~= nil and data.origPrice or fillType.pricePerLiter, fillType.pricePerLiter * 1000, priceMultiplier, fillType.pricePerLiter * 1000 * priceMultiplier))
+        table.insert(out, string.format("  seasonal factor now %.3f, yearly mean %.3f  -> sell price now %.1f, yearly average %.1f (before station scale)", factor,
+            EconomyTuner.getMeanFactor(fillType.economy.factors), fillType.pricePerLiter * 1000 * priceMultiplier * factor,
+            fillType.pricePerLiter * 1000 * priceMultiplier * EconomyTuner.getMeanFactor(fillType.economy.factors)))
+        table.insert(out, string.format("  buy at a x1 buying station %.1f, running cost (no difficulty) %.1f", getStationBuyPrice(fillType.index) * 1000,
+            g_currentMission.economyManager:getCostPerLiter(fillType.index, false) / factor * 1000))
+        local stations = {}
+        for _, stationData in ipairs(g_currentMission.economyManager.sellingStations) do
+            local station = stationData.station
+            if station.acceptedFillTypes[fillType.index] then
+                table.insert(stations, string.format("    %s: %.1f", station:getName() or "?", station.fillTypePrices[fillType.index] * 1000 * priceMultiplier))
+            end
+        end
+        table.sort(stations)
+        table.insert(out, string.format("  %d selling stations (current price incl. station scale, season and noise, difficulty applied):", #stations))
+        for i = 1, math.min(#stations, 8) do
+            table.insert(out, stations[i])
+        end
+        if #stations > 8 then
+            table.insert(out, string.format("    ... %d more, etDump lists all", #stations - 8))
+        end
+    end
+
+    local fruitType = g_fruitTypeManager:getFruitTypeByName(name)
+    if fruitType ~= nil then
+        local data = self.appliedFruits[fruitType.index]
+        table.insert(out, string.format("fruitType %s (index %d), table entry: %s", name, fruitType.index, self.config ~= nil and self.config.fruitTypes[name] ~= nil and "yes" or "no"))
+        table.insert(out, string.format("  yield %.0f L/ha (game %.0f), windrow %.0f L/ha (game %.0f), seed %.0f L/ha (game %.0f)",
+            (fruitType.literPerSqm or 0) * 10000, ((data ~= nil and data.literPerSqm or fruitType.literPerSqm) or 0) * 10000,
+            (fruitType.windrowLiterPerSqm or 0) * 10000, ((data ~= nil and data.windrowLiterPerSqm or fruitType.windrowLiterPerSqm) or 0) * 10000,
+            (fruitType.seedUsagePerSqm or 0) * 10000, ((data ~= nil and data.seedUsagePerSqm or fruitType.seedUsagePerSqm) or 0) * 10000))
+    end
+
+    if #out == 0 then
+        return string.format("%s is neither a fillType nor a fruitType", name)
+    end
+    return table.concat(out, "\n")
+end
+
+---------------------------------------------------------------------------------------------------
 -- Hooks
 ---------------------------------------------------------------------------------------------------
 
@@ -852,6 +1082,9 @@ function EconomyTuner.onStartMission(mission)
     if EconomyTuner.settings.dumpOnStart then
         EconomyTuner:dump()
     end
+    if EconomyTuner.settings.checkOnStart then
+        EconomyTuner:consoleCommandCheck()
+    end
 end
 
 function EconomyTuner:consoleCommandDump()
@@ -887,6 +1120,8 @@ function EconomyTuner.install()
     Mission00.onStartMission = Utils.appendedFunction(Mission00.onStartMission, EconomyTuner.onStartMission)
 
     addConsoleCommand("etDump", "Writes all fillType prices, selling stations and fruit type yields to modSettings/" .. tostring(EconomyTuner.MOD_NAME) .. "/", "consoleCommandDump", EconomyTuner)
+    addConsoleCommand("etCheck", "Checks every table entry against the running game and writes etCheck.txt (expected vs actual prices, buy prices, yields)", "consoleCommandCheck", EconomyTuner)
+    addConsoleCommand("etInfo", "etInfo <NAME>: prices, buy price, yield and selling points of one fillType / fruitType", "consoleCommandInfo", EconomyTuner)
     addConsoleCommand("etReload", "Re-reads the EconomyTuner tables and updates prices, selling stations and yields", "consoleCommandReload", EconomyTuner)
 end
 

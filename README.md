@@ -105,6 +105,7 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 | `keepBuyPrices` | true | 改过卖价的货物，买价仍按原价算 |
 | `rescaleHistory` | true | 把存档里的价格历史曲线按新价格等比缩放 |
 | `dumpOnStart` | false | 每次进档写一份 `priceDump.csv` 和 `yieldDump.csv` |
+| `checkOnStart` | false | 每次进档自动跑一遍 `etCheck` |
 
 ### 控制台命令
 
@@ -112,6 +113,8 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 |---|---|
 | `etReload` | 重新读所有层，立即更新价格、收购点和产量（单机或服务器） |
 | `etDump` | 写出 `modSettings/FS25_EconomyTuner/priceDump.csv` 和 `yieldDump.csv` |
+| `etCheck` | 校验：把表里每一项和正在运行的游戏对照（卖价、买价、季节曲线、产量、耗种量、收购点规则），逐项列出期望值和实际值，结果写进日志和 `etCheck.txt`，控制台只显示失败项 |
+| `etInfo 名称` | 查看一种货物或作物：当前价格、原价、季节系数、买价、各收购点价格、产量 |
 
 `priceDump.csv`（分号分隔）：货物名；标题；原价；现价；全年平均价；是否改过；买价；12 个季节系数；收购点（名称、倍率、xml 路径）。`yieldDump.csv`：作物名；原/现产量（L/ha）；原/现 windrow 产量；原/现种子用量；是否改过。
 
@@ -231,6 +234,7 @@ These go in `<settings .../>`:
 | `keepBuyPrices` | true | fillTypes with a changed sell price keep their original buy price |
 | `rescaleHistory` | true | rescale the saved price history to the new prices |
 | `dumpOnStart` | false | write `priceDump.csv` and `yieldDump.csv` every time a savegame starts |
+| `checkOnStart` | false | run `etCheck` every time a savegame starts |
 
 ### Console commands
 
@@ -238,6 +242,8 @@ These go in `<settings .../>`:
 |---|---|
 | `etReload` | re-read all layers and update prices, selling points and yields immediately (single player or server) |
 | `etDump` | write `modSettings/FS25_EconomyTuner/priceDump.csv` and `yieldDump.csv` |
+| `etCheck` | verify: checks every table entry against the running game (sell price, buy price, seasonal curve, yield, seed usage, station rules), lists expected vs actual per entry in the log and `etCheck.txt`, and shows only the failures in the console |
+| `etInfo NAME` | show one fillType or fruitType: current price, original price, seasonal factor, buy price, prices at every selling point, yield |
 
 `priceDump.csv` (semicolon-separated): fillType; title; original price; applied price; yearly average; changed; buy price; 12 seasonal factors; selling points (name, scale, xml path). `yieldDump.csv`: fruitType; original/applied yield (L/ha); original/applied windrow yield; original/applied seed usage; changed.
 
