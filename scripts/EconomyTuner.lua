@@ -381,8 +381,31 @@ function EconomyTuner.createGlobalTemplate()
     end
 end
 
+-- FS25's io.open only writes (any other mode truncates the file): read through the XML engine.
+local function readText(filename)
+    local xmlFile = XMLFile.loadIfExists("economyTunerSavegameTable", filename)
+    if xmlFile == nil then
+        return nil
+    end
+    local text = xmlFile:getAsString()
+    xmlFile:delete()
+    return text
+end
+
+---The savegame folder table, remembered so a save can write it back (see onSaveCareerMissionInfo).
+function EconomyTuner:rememberSavegameTable()
+    local directory = self:getSavegameDirectory()
+    if directory == nil then
+        self.savegameTable = nil
+        return
+    end
+    local filename = directory .. "/" .. tostring(EconomyTuner.MOD_NAME) .. ".xml"
+    self.savegameTable = { filename = filename, text = readText(filename) }
+end
+
 function EconomyTuner:loadConfig()
     EconomyTuner.createGlobalTemplate()
+    self:rememberSavegameTable()
 
     local configs = {}
     for _, filename in ipairs(self:getConfigFilenames()) do
@@ -408,6 +431,8 @@ function EconomyTuner:reset()
     -- [fruitTypeIndex] = { name, literPerSqm, windrowLiterPerSqm, seedUsagePerSqm } as the game defined them
     self.appliedFruits = {}
     self.missionInfo = nil
+    -- { filename, text } of <savegame folder>/<mod name>.xml as read at load / etReload
+    self.savegameTable = nil
 end
 
 function EconomyTuner:getMissionInfo()
@@ -1249,6 +1274,35 @@ function EconomyTuner.economyLoadFromXMLFile(economyManager, xmlFileHandle, key)
     end
 end
 
+-- FS25 writes a save into a new folder that then replaces the savegame folder: a file the game
+-- did not write is gone after the first save (seen in ENV-01 r2, the backup still had it).
+-- Write the savegame folder table into the folder being saved. The current file wins over the
+-- copy read at load, so edits made while playing are kept.
+function EconomyTuner.onSaveCareerMissionInfo(missionInfo)
+    local self = EconomyTuner
+    local saved = self.savegameTable
+    if saved == nil then
+        return
+    end
+    local directory = missionInfo.savegameDirectory
+    if directory == nil or directory == "" then
+        return
+    end
+    local target = string.gsub(directory, "[/\\]+$", "") .. "/" .. tostring(EconomyTuner.MOD_NAME) .. ".xml"
+    local text = readText(saved.filename) or saved.text
+    if text == nil or fileExists(target) then
+        return
+    end
+    local file = io.open(target, "w")
+    if file == nil then
+        warning("could not keep %s in the save (%s)", saved.filename, target)
+        return
+    end
+    file:write(text)
+    file:close()
+    saved.text = text
+end
+
 function EconomyTuner.onStartMission(mission)
     if EconomyTuner.settings.dumpOnStart then
         EconomyTuner:dump()
@@ -1290,6 +1344,7 @@ function EconomyTuner.install()
     EconomyManager.loadFromXMLFile = Utils.appendedFunction(EconomyManager.loadFromXMLFile, EconomyTuner.economyLoadFromXMLFile)
 
     Mission00.onStartMission = Utils.appendedFunction(Mission00.onStartMission, EconomyTuner.onStartMission)
+    FSCareerMissionInfo.saveToXMLFile = Utils.appendedFunction(FSCareerMissionInfo.saveToXMLFile, EconomyTuner.onSaveCareerMissionInfo)
 
     addConsoleCommand("etDump", "Writes all fillType prices, selling stations and fruit type yields to modSettings/" .. tostring(EconomyTuner.MOD_NAME) .. "/", "consoleCommandDump", EconomyTuner)
     addConsoleCommand("etCheck", "Checks every table entry against the running game and writes etCheck.txt (expected vs actual prices, buy prices, yields)", "consoleCommandCheck", EconomyTuner)

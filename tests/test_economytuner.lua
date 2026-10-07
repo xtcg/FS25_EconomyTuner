@@ -16,14 +16,14 @@ local function fruit(name) return g_fruitTypeManager:getFruitTypeByName(name) en
 local SHIPPED_FILE = REPO .. "config/economy.xml"
 local DEFAULT_FILE = g_currentModDirectory .. "config/economy.xml"
 local function readFile(path)
-    local f = assert(io.open(path, "r"))
+    local f = assert(REAL_IO.open(path, "r"))
     local text = f:read("a")
     f:close()
     return text
 end
 local SHIPPED = readFile(SHIPPED_FILE)
 local function useDefaultTable(text)
-    local f = assert(io.open(DEFAULT_FILE, "w"))
+    local f = assert(REAL_IO.open(DEFAULT_FILE, "w"))
     f:write(text)
     f:close()
 end
@@ -151,7 +151,7 @@ do
     check("per-savegame file leaves the rest of global alone", near(milk().pricePerLiter * EconomyTuner.getMeanFactor(milk().economy.factors), 0.900))
 
     createFolder(TMP .. "savegame3")
-    local f = assert(io.open(TMP .. "savegame3/FS25_EconomyTuner.xml", "w"))
+    local f = assert(REAL_IO.open(TMP .. "savegame3/FS25_EconomyTuner.xml", "w"))
     f:write(config("", '<fillType name="WHEAT" price="450"/>'))
     f:close()
     writeUserConfig(config("", '<fillType name="WHEAT" price="420"/>'), "savegame3.xml")
@@ -351,14 +351,14 @@ do
     writeUserConfig(config("", '<fillType name="WHEAT" price="400" buy="500"/><fruitType name="WHEAT" yieldScale="1.25"/>'))
     startSession(EconomicDifficulty.HARD, STATIONS)
     local result = COMMANDS.etDump()
-    local f = io.open(g_currentModSettingsDirectory .. "priceDump.csv", "r")
+    local f = REAL_IO.open(g_currentModSettingsDirectory .. "priceDump.csv", "r")
     local text = f and f:read("a") or ""
     if f then f:close() end
     check("dump written", result:find("written") ~= nil)
     check("dump has original, applied and buy price", text:find("WHEAT;WHEAT;337.0;400.0;400.3;yes;500.0;", 1, true) ~= nil)
     check("dump lists stations with scale", text:find("dealer x1.20", 1, true) ~= nil)
 
-    f = io.open(g_currentModSettingsDirectory .. "yieldDump.csv", "r")
+    f = REAL_IO.open(g_currentModSettingsDirectory .. "yieldDump.csv", "r")
     text = f and f:read("a") or ""
     if f then f:close() end
     check("yield dump has original and applied litres per ha", text:find("WHEAT;8000;10000;12000;12000;185;185;yes", 1, true) ~= nil)
@@ -485,7 +485,7 @@ do
     for _, difficulty in ipairs({ EconomicDifficulty.HARD, EconomicDifficulty.EASY }) do
         startSession(difficulty, STATIONS)
         local result = COMMANDS.etCheck()
-        local f = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+        local f = REAL_IO.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
         local text = f and f:read("a") or ""
         if f then f:close() end
         check("etCheck report written (difficulty " .. difficulty .. ")", text:find("checks,", 1, true) ~= nil)
@@ -541,3 +541,64 @@ do
     check("removing fruit override restores original yield and clears stale receipt", near(fruit('BARLEY').literPerSqm, 0.7) and next(EconomyTuner.appliedFruits) == nil)
     restoreDefaultTable()
 end
+
+-- ENV-01 r2: a save writes a new folder that replaces the savegame folder, so the savegame
+-- folder table (and checkOnStart in it) was gone on the next load.
+do
+    useDefaultTable(EMPTY)
+    writeUserConfig(EMPTY)
+    local source = TMP .. "savegame6"
+    createFolder(source)
+    local tableText = config('checkOnStart="true"', '<fillType name="WHEAT" price="455"/>')
+    local f = assert(REAL_IO.open(source .. "/FS25_EconomyTuner.xml", "w")); f:write(tableText); f:close()
+    local mission = startSession(EconomicDifficulty.HARD, nil, "savegame6")
+    check("savegame folder table is applied at load", near(wheat().pricePerLiter, 0.455) and EconomyTuner.settings.checkOnStart == true)
+
+    -- the engine points the mission info at the folder being written, then calls saveToXMLFile
+    local temp = TMP .. "savegame6_temp"
+    createFolder(temp)
+    mission.missionInfo.savegameDirectory = temp
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save writes the savegame folder table into the folder being saved", fileExists(temp .. "/FS25_EconomyTuner.xml") and readFile(temp .. "/FS25_EconomyTuner.xml") == tableText)
+
+    -- edits made while playing are what gets saved
+    local edited = config('checkOnStart="true"', '<fillType name="WHEAT" price="460"/>')
+    f = assert(REAL_IO.open(source .. "/FS25_EconomyTuner.xml", "w")); f:write(edited); f:close()
+    local temp2 = TMP .. "savegame6_temp2"
+    createFolder(temp2)
+    mission.missionInfo.savegameDirectory = temp2
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save keeps the current file, not the copy read at load", readFile(temp2 .. "/FS25_EconomyTuner.xml") == edited)
+
+    -- the old folder is gone after the swap: the remembered copy is written
+    os.remove(source .. "/FS25_EconomyTuner.xml")
+    local temp3 = TMP .. "savegame6_temp3"
+    createFolder(temp3)
+    mission.missionInfo.savegameDirectory = temp3
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save falls back to the remembered table when the old folder was replaced", readFile(temp3 .. "/FS25_EconomyTuner.xml") == edited)
+
+    -- a file already in the folder being saved is not overwritten
+    local temp4 = TMP .. "savegame6_temp4"
+    createFolder(temp4)
+    f = assert(REAL_IO.open(temp4 .. "/FS25_EconomyTuner.xml", "w")); f:write("other"); f:close()
+    mission.missionInfo.savegameDirectory = temp4
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save never overwrites a table already in the target folder", readFile(temp4 .. "/FS25_EconomyTuner.xml") == "other")
+
+    -- next load from the saved folder has the table and its settings again
+    mission.missionInfo.savegameDirectory = temp
+    startSession(EconomicDifficulty.HARD, nil, "savegame6_temp")
+    check("load after save still applies the savegame folder table", near(wheat().pricePerLiter, 0.455) and EconomyTuner.settings.checkOnStart == true)
+
+    -- a savegame without a folder table writes nothing
+    local temp5 = TMP .. "savegame7_temp"
+    createFolder(temp5)
+    mission = startSession(EconomicDifficulty.HARD, nil, "savegame7")
+    mission.missionInfo.savegameDirectory = temp5
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("savegame without a folder table saves none", not fileExists(temp5 .. "/FS25_EconomyTuner.xml"))
+    restoreDefaultTable()
+end
+
+check("FS25 io: the mod opened files for writing only", #IO_MISUSE == 0)
