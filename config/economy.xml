@@ -251,16 +251,20 @@
     <shopItem xmlFilename="objects/buyableBales/buyableBales_strawRound.xml" fillType="STRAW"/>
 
     <!-- Animal supplies that no selling point buys on the Hof Bergmann map get a fixed shop price (EUR per 1000 L).
-         Anchor: average UK price in GBP per tonne x K_p 2.1603 (the factor used for crop and straw prices, so feed
-         stays in proportion to the grain it is made from) x density. Real prices, 2025-26 retail / AHDB / Defra, rounded:
+         Anchor: UK reference price in GBP per tonne x K_p 2.1603 (the factor used for crop and straw prices, so feed
+         stays in proportion to the grain it is made from) x density. Planning references from retail / AHDB / Defra,
+         not uniform national averages or live quotes:
          pig feed 330 (Defra 295 Q2 2024, AHDB 357-371 in 2023), piglet creep 1200, cattle minerals 820 (25 kg bag
          20.50), calf milk replacer 2300 (25 kg bag 56-64), wood shavings 450 (20 kg bale 6-12), trout feed 1500
-         (25 kg bag 28-49), dry cat food 3500 (3-5 per kg), dry dog food 2500 (1.5-4 per kg). -->
+         (25 kg bag 28-49), dry cat food 3500 (3-5 per kg), dry dog food 2500 (1.5-4 per kg).
+         Exception agreed 2026-10-10: MILKPOWDER is 200 per 100 L sack, hence price=2000 per 1000 L.
+         This replaces the 2300/t reference result (4969 per 1000 L); do not apply K_p again to the chosen price.
+         The HB mixer recipe and animal feed consumption are independent of this shop price. -->
     <shopItem xmlFilename="objects/bigBag/pigFood/multiPurchaseBigBag_pigFood.xml" price="463"/>   <!-- PIGFOOD 330/t -> 463 per unit, game 1000 -->
     <shopItem xmlFilename="objects/bigBagPallet/pigFood/multiPurchaseBigBagPallet_pigFood.xml" price="463"/>   <!-- PIGFOOD 330/t -> 463 per unit, game 1000 -->
     <shopItem xmlFilename="objects/pallets/pigletFoodSack/pigletFoodSack_mip.xml" price="1685"/>   <!-- PIGLETFOOD 1200/t -> 168 per unit, game 50 -->
     <shopItem xmlFilename="objects/pallets/mineralFeedPallet/multiPurchasePallet_mineralFeedPallet.xml" price="1151"/>   <!-- MINERAL_FEED 820/t -> 1209 per unit, game 1000 -->
-    <shopItem xmlFilename="objects/pallets/milkPowderSack/milkPowderSack_mip.xml" price="4969"/>   <!-- MILKPOWDER 2300/t -> 497 per unit, game 25 -->
+    <shopItem xmlFilename="objects/pallets/milkPowderSack/milkPowderSack_mip.xml" price="2000"/>   <!-- MILKPOWDER fixed 200 per 100 L sack, game 25 -->
     <shopItem xmlFilename="objects/pallets/woodShavingsPackage/woodShavingsPackage_mip.xml" price="292"/>   <!-- WOODSHAVINGS 450/t -> 292 per unit, game 50 -->
     <shopItem xmlFilename="objects/pallets/fishFood/fishFood_mpi.xml" price="3240"/>   <!-- FISHFEED 1500/t -> 162 per unit, game 25 -->
     <shopItem xmlFilename="objects/pallets/catFoodPallet/catFoodPallet.xml" price="5898"/>   <!-- CATFOOD 3500/t -> 283 per unit, game 6 -->
