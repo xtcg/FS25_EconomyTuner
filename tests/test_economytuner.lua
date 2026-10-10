@@ -44,13 +44,21 @@ end
 do
     local cfg = EconomyTuner.readConfig(SHIPPED_FILE)
     check("default table parses", cfg ~= nil)
-    check("default table has 125 fillTypes", table.size(cfg.fillTypes) == 125)
+    check("default table has 126 fillTypes", table.size(cfg.fillTypes) == 126)
     check("default WHEAT is 337", near(cfg.fillTypes.WHEAT.price, 337))
     check("default settings read", cfg.settings.normalizeDifficulty == true and cfg.settings.dumpOnStart == false)
     check("default example station is commented out", #cfg.stations == 0)
     check("default MILK / RAWMILK follow the plan", near(cfg.fillTypes.MILK.price, 907) and near(cfg.fillTypes.RAWMILK.price, 907))
     check("default wheat stays, potato stays", near(cfg.fillTypes.POTATO.price, 222) and cfg.fruitTypes.WHEAT == nil)
     check("default seed and fertilizer buy prices undo the BayWa scale", near(cfg.fillTypes.SEEDS.buy * 0.95, 300, 1e-4) and near(cfg.fillTypes.FERTILIZER.buy * 0.70, 350, 1e-4))
+    local shop = {}
+    for _, rule in ipairs(cfg.shopItems) do shop[rule.path] = rule end
+    check("default shop seed / fertilizer / lime bags are fixed at the BayWa price",
+        shop["objects/bigbag/seeds/multipurchasebigbag_seeds.xml"].price == 300
+        and shop["objects/bigbagpallet/fertilizer/multipurchasebigbagpallet_fertilizer.xml"].price == 350
+        and shop["objects/bigbag/lime/multipurchasebigbag_lime.xml"].price == 112.5
+        and shop["objects/pallets/pioneer/multipurchasepallet_pioneerpallet.xml"].basis == "fixed")
+    check("default LIME buy keeps the game price on every difficulty", cfg.fillTypes.LIME.buy == 225)
     check("default yield: barley / maize", near(cfg.fruitTypes.BARLEY.yieldScale, 0.957077) and near(cfg.fruitTypes.MAIZE.yieldScale, 1.179008))
     check("default seed: wheat unchanged, canola x8.16", cfg.fruitTypes.WHEAT == nil and near(cfg.fruitTypes.CANOLA.seedScale, 400 / 49, 1e-5))
     check("default has no grass / root yield entries", cfg.fruitTypes.GRASS == nil and cfg.fruitTypes.POTATO == nil and cfg.fruitTypes.SUGARBEET.yieldScale == nil)

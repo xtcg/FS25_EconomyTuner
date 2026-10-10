@@ -229,6 +229,7 @@
         Other channels keep their own scale (HB silo system x0.8, base lime station x0.8). -->
     <fillType name="SEEDS"                   buy="315.789474"/>
     <fillType name="FERTILIZER"              buy="500"/>
+    <fillType name="LIME"                    buy="225"/>   <!-- game price, now the same on every difficulty; BayWa x0.5 = 112.5 -->
 
     <!-- ===== 水 Water (plan 2026-10-04) =====
         Game price 100 EUR/1000 L. price covers what the husbandry auto water supply pays (reads pricePerLiter
@@ -249,6 +250,18 @@
     <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrassRound.xml" fillType="DRYGRASS_WINDROW"/>
     <shopItem xmlFilename="objects/buyableBales/buyableBales_straw.xml" fillType="STRAW"/>
     <shopItem xmlFilename="objects/buyableBales/buyableBales_strawRound.xml" fillType="STRAW"/>
+
+    <!-- ===== 商店里的种子、化肥、石灰 Shop seed, fertilizer and lime (2026-10-11) =====
+        Same price as at the BayWa buying station (buy x BayWa priceScale): seeds 300, fertilizer 350, lime 112.5 EUR
+        per 1000 L, so a big bag costs 300 / 350 / 225 (lime bags hold 2000 L), the Pioneer seed pallet 1050 L = 315.
+        Game prices were 1260 / 1920 / 450 per bag. Other buying stations keep their own scale. -->
+    <shopItem xmlFilename="objects/bigBag/seeds/multiPurchaseBigBag_seeds.xml"                    price="300"/>
+    <shopItem xmlFilename="objects/bigBagPallet/seeds/multiPurchaseBigBagPallet_seeds.xml"        price="300"/>
+    <shopItem xmlFilename="objects/pallets/pioneer/multiPurchasePallet_pioneerPallet.xml"         price="300"/>
+    <shopItem xmlFilename="objects/bigBag/fertilizer/multiPurchaseBigBagHelm_fertilizer.xml"      price="350"/>
+    <shopItem xmlFilename="objects/bigBagPallet/fertilizer/multiPurchaseBigBagPallet_fertilizer.xml" price="350"/>
+    <shopItem xmlFilename="objects/bigBag/lime/multiPurchaseBigBag_lime.xml"                      price="112.5"/>
+    <shopItem xmlFilename="objects/bigBagPallet/lime/multiPurchaseBigBagPallet_lime.xml"          price="112.5"/>
 
     <!-- Animal supplies that no selling point buys on the Hof Bergmann map get a fixed shop price (EUR per 1000 L).
          Anchor: UK reference price in GBP per tonne x K_p 2.1603 (the factor used for crop and straw prices, so feed
