@@ -2,6 +2,7 @@
 --
 --   <fillType>   sell price, seasonal curve, buy price of any fillType
 --   <station>    priceScale override of one selling point
+--   <shopItem>   shop (P key) consumables whose price follows the current month's sell price
 --   <fruitType>  harvest yield, windrow yield, seed usage per crop
 --
 -- Every sell path in FS25 reads fillType.pricePerLiter x seasonal factor x difficulty multiplier:
@@ -140,7 +141,8 @@ end
 
 ---Reads one table file. Returns nil when the file cannot be opened.
 -- config = { settings = {name = bool} (only keys present in the file), fillTypes = { [NAME] = entry },
---            fruitTypes = { [NAME] = entry }, stations = { {path=, fillType=, priceScale=} } }
+--            fruitTypes = { [NAME] = entry }, stations = { {path=, fillType=, priceScale=} },
+--            shopItems = { {path=, fillType=, markup=} } }
 function EconomyTuner.readConfig(filename)
     local xmlFile = XMLFile.loadIfExists("economyTunerConfig", filename)
     if xmlFile == nil then
@@ -148,7 +150,7 @@ function EconomyTuner.readConfig(filename)
     end
 
     local root = EconomyTuner.ROOT
-    local config = { settings = {}, fillTypes = {}, fruitTypes = {}, stations = {}, filename = filename }
+    local config = { settings = {}, fillTypes = {}, fruitTypes = {}, stations = {}, shopItems = {}, filename = filename }
     for name, _ in pairs(EconomyTuner.DEFAULT_SETTINGS) do
         config.settings[name] = xmlFile:getBool(root .. ".settings#" .. name)
     end
@@ -225,6 +227,21 @@ function EconomyTuner.readConfig(filename)
         })
     end)
 
+    xmlFile:iterate(root .. ".shopItem", function(_, key)
+        local path = xmlFile:getString(key .. "#xmlFilename")
+        local fillTypeName = xmlFile:getString(key .. "#fillType")
+        local markup = xmlFile:getFloat(key .. "#markup") or 1
+        if path == nil or fillTypeName == nil or markup <= 0 then
+            warning("%s: shopItem entry %s needs xmlFilename, fillType and markup > 0", filename, key)
+            return
+        end
+        table.insert(config.shopItems, {
+            path = normalizePath(path),
+            fillType = string.upper(fillTypeName),
+            markup = markup
+        })
+    end)
+
     xmlFile:delete()
     return config
 end
@@ -253,8 +270,9 @@ end
 
 ---Layers a list of configs (lowest priority first) into one.
 function EconomyTuner.mergeConfigs(configs)
-    local merged = { settings = table.clone(EconomyTuner.DEFAULT_SETTINGS), fillTypes = {}, fruitTypes = {}, stations = {}, filenames = {} }
+    local merged = { settings = table.clone(EconomyTuner.DEFAULT_SETTINGS), fillTypes = {}, fruitTypes = {}, stations = {}, shopItems = {}, filenames = {} }
     local stationIndex = {}
+    local shopItemIndex = {}
 
     for _, config in ipairs(configs) do
         table.insert(merged.filenames, config.filename)
@@ -272,6 +290,14 @@ function EconomyTuner.mergeConfigs(configs)
                 stationIndex[id] = #merged.stations
             end
         end
+        for _, rule in ipairs(config.shopItems) do
+            if shopItemIndex[rule.path] ~= nil then
+                merged.shopItems[shopItemIndex[rule.path]] = rule
+            else
+                table.insert(merged.shopItems, rule)
+                shopItemIndex[rule.path] = #merged.shopItems
+            end
+        end
     end
     return merged
 end
@@ -287,7 +313,10 @@ end
 
 ---The files that make up the current table, lowest priority first (missing files are skipped when read).
 function EconomyTuner:getConfigFilenames()
-    local filenames = { Utils.getFilename(EconomyTuner.DEFAULT_CONFIG, EconomyTuner.MOD_DIRECTORY) }
+    -- GIANTS returns (filename, isRelative). Capture only the filename: a table
+    -- constructor would expand both returns and pass a boolean to fileExists.
+    local defaultFilename = Utils.getFilename(EconomyTuner.DEFAULT_CONFIG, EconomyTuner.MOD_DIRECTORY)
+    local filenames = { defaultFilename }
     local settingsDirectory = EconomyTuner.SETTINGS_DIRECTORY
     local savegameDirectory = self:getSavegameDirectory()
     local savegameName = savegameDirectory ~= nil and string.match(savegameDirectory, "([^/\\]+)$") or nil
@@ -530,6 +559,7 @@ function EconomyTuner:restore()
         end
     end
     self.applied = {}
+    self.appliedFruits = {}
     self.buyTargets = {}
     self.isActive = false
 end
@@ -698,6 +728,74 @@ function EconomyTuner:dumpFruitTypes(filename)
 end
 
 ---------------------------------------------------------------------------------------------------
+-- Shop consumables priced from the market
+---------------------------------------------------------------------------------------------------
+
+---Capacity in litres of the first fill unit of a store item (what one purchased unit holds).
+function EconomyTuner.getStoreItemCapacity(storeItem)
+    EconomyTuner.capacities = EconomyTuner.capacities or {}
+    local filename = storeItem.xmlFilename
+    if EconomyTuner.capacities[filename] == nil then
+        local capacity = false
+        local xmlFile = XMLFile.loadIfExists("economyTunerStoreItem", filename)
+        if xmlFile ~= nil then
+            capacity = xmlFile:getFloat("vehicle.fillUnit.fillUnitConfigurations.fillUnitConfiguration(0).fillUnits.fillUnit(0)#capacity") or false
+            xmlFile:delete()
+        end
+        EconomyTuner.capacities[filename] = capacity
+    end
+    return EconomyTuner.capacities[filename] or nil
+end
+
+function EconomyTuner:getShopItemRule(storeItem)
+    if self.config == nil or not self.isActive or storeItem == nil or storeItem.xmlFilename == nil then
+        return nil
+    end
+    local filename = normalizePath(storeItem.xmlFilename)
+    for _, rule in ipairs(self.config.shopItems) do
+        if endsWith(filename, rule.path) then
+            return rule
+        end
+    end
+    return nil
+end
+
+---Market price of a fillType this month in EUR per 1000 L: the sell price the player sees, at the seasonal factor of
+-- the current period (not interpolated), before selling point scale and random fluctuation.
+function EconomyTuner:getMonthlyPrice(fillType)
+    local environment = g_currentMission ~= nil and g_currentMission.environment or nil
+    local period = environment ~= nil and environment.currentPeriod or 1
+    local priceMultiplier = self:getDifficultyMultipliers()
+    return fillType.pricePerLiter * 1000 * priceMultiplier * (fillType.economy.factors[period] or 1)
+end
+
+---Price of one purchasable unit of a shop item that follows the market, or nil when the item has no rule.
+function EconomyTuner:getShopItemPrice(storeItem)
+    local rule = self:getShopItemRule(storeItem)
+    if rule == nil then
+        return nil
+    end
+    local fillType = g_fillTypeManager:getFillTypeByName(rule.fillType)
+    local capacity = EconomyTuner.getStoreItemCapacity(storeItem)
+    if fillType == nil or capacity == nil then
+        return nil
+    end
+    return capacity / 1000 * self:getMonthlyPrice(fillType) * rule.markup
+end
+
+function EconomyTuner.economyGetBuyPrice(economyManager, superFunc, storeItem, ...)
+    local price, upgradePrice = superFunc(economyManager, storeItem, ...)
+    local unitPrice = EconomyTuner:getShopItemPrice(storeItem)
+    if unitPrice ~= nil and storeItem.price ~= nil and storeItem.price > 0 then
+        -- amount configurations are priced per unit too, so scale everything by the same factor
+        local ratio = unitPrice / storeItem.price
+        price = price ~= nil and price * ratio or price
+        upgradePrice = upgradePrice ~= nil and upgradePrice * ratio or upgradePrice
+    end
+    return price, upgradePrice
+end
+
+---------------------------------------------------------------------------------------------------
 -- In-game verification (etCheck / etInfo)
 ---------------------------------------------------------------------------------------------------
 
@@ -835,6 +933,26 @@ function EconomyTuner:check()
         add(string.format("%s %-44s matches %d selling stations (fillType %s, priceScale %.2f)", matched > 0 and "OK  " or "FAIL", rule.path, matched, rule.fillType, rule.priceScale))
     end
 
+    add("--- shop items (price of one unit, EUR) ---")
+    for _, rule in ipairs(config.shopItems) do
+        local storeItem = nil
+        for _, item in ipairs(g_storeManager ~= nil and g_storeManager:getItems() or {}) do
+            if item.xmlFilename ~= nil and endsWith(normalizePath(item.xmlFilename), rule.path) then
+                storeItem = item
+                break
+            end
+        end
+        local fillType = g_fillTypeManager:getFillTypeByName(rule.fillType)
+        local capacity = storeItem ~= nil and EconomyTuner.getStoreItemCapacity(storeItem) or nil
+        if storeItem == nil or fillType == nil or capacity == nil then
+            add(string.format("SKIP %-44s store item, fillType or capacity not found", rule.path))
+        else
+            local expected = capacity / 1000 * self:getMonthlyPrice(fillType) * rule.markup
+            local actual = g_currentMission.economyManager:getBuyPrice(storeItem)
+            verify(string.format("%s (%.0f L of %s, was %.0f)", rule.path:match("([^/]+)%.xml$") or rule.path, capacity, rule.fillType, storeItem.price), expected, actual, "")
+        end
+    end
+
     add(string.format("--- %d checks, %d failed ---", numChecks, numFailed))
     return lines, numChecks, numFailed
 end
@@ -937,6 +1055,9 @@ end
 
 function EconomyTuner.onLoadModFillTypes(fillTypeManager)
     EconomyTuner:apply()
+    -- FS25 loads fruit types before mod fill types, when our config is still nil.
+    -- Apply after the final table is available, also on maps with mod foliage.
+    EconomyTuner:applyFruitTypes()
 end
 
 function EconomyTuner.onLoadFruitTypes(fruitTypeManager)
@@ -1114,6 +1235,7 @@ function EconomyTuner.install()
 
     BuyingStation.getEffectiveFillTypePrice = Utils.overwrittenFunction(BuyingStation.getEffectiveFillTypePrice, EconomyTuner.buyingStationPrice)
     EconomyManager.getCostPerLiter = Utils.overwrittenFunction(EconomyManager.getCostPerLiter, EconomyTuner.economyCostPerLiter)
+    EconomyManager.getBuyPrice = Utils.overwrittenFunction(EconomyManager.getBuyPrice, EconomyTuner.economyGetBuyPrice)
     EconomyManager.saveToXMLFile = Utils.appendedFunction(EconomyManager.saveToXMLFile, EconomyTuner.economySaveToXMLFile)
     EconomyManager.loadFromXMLFile = Utils.appendedFunction(EconomyManager.loadFromXMLFile, EconomyTuner.economyLoadFromXMLFile)
 

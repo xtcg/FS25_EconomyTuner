@@ -53,6 +53,18 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 - `buy` / `buyScale` 二选一，设定**买价**：买入站（种子、化肥、柴油等）的价格，以及播种、施肥、加油的消耗成本。不写时，改过卖价的货物买价仍保持游戏原价（`keepBuyPrices`）。
 - 买价和卖价共用 `pricePerLiter`，所以买价通过额外的换算实现，不会影响卖价。
 
+### 商店消耗品跟随市价：`<shopItem>`
+
+商店（P 键）里的消耗品是固定标价，例如小麦大袋 1500 £/1000 L、青贮草捆 598、干草草捆 192。`<shopItem>` 让它们的单价随市场走：
+
+```xml
+<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE" markup="1"/>
+```
+
+单价 = 容量（L）÷ 1000 × **当月卖价** × `markup`。当月卖价是玩家看到的卖价（含难度）乘当前 period 的季节系数，未计收购点倍率和随机波动，所以同一个月内价格不变，换月才变。购买多件（2 到 8 件）时同比缩放。`xmlFilename` 按路径结尾匹配。默认表已包含：小麦大袋、小麦大袋托盘、青贮草捆（方形、圆形）、干草草捆（方形、圆形）。秸秆草捆没有加，需要的话照样写一行。
+
+`markup` 默认 1。买入价等于卖价意味着买进后原价卖出（草捆在 HB 的收购点是 0.8 倍）只亏收购点倍率和波动，想避免套利可以把 `markup` 设成 1.2 左右。
+
 ### 作物：`<fruitType>`
 
 ```xml
@@ -181,6 +193,18 @@ Units are EUR per 1000 litres, or per 1000 pieces for piece goods such as eggs a
 - `price` / `average` / `scale`: pick one to set the sell price. `factors` are the 12 seasonal factors; without them the original curve is kept.
 - `buy` / `buyScale`: pick one to set the **buy** price: buying stations (seed, fertilizer, diesel, ...) and the running cost of sowing, spraying and refuelling. Without them, a fillType with a changed sell price keeps the game's original buy price (`keepBuyPrices`).
 - The game uses one `pricePerLiter` for both directions, so the buy price is implemented as a separate conversion and does not affect the sell price.
+
+### Shop consumables that follow the market: `<shopItem>`
+
+Consumables in the shop (P key) have fixed prices, e.g. wheat big bag 1500 per 1000 L, silage bales 598, hay bales 192. `<shopItem>` makes their unit price follow the market:
+
+```xml
+<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE" markup="1"/>
+```
+
+Unit price = capacity (L) / 1000 × **this month's sell price** × `markup`. This month's sell price is the price the player sees (difficulty included) times the seasonal factor of the current period, before selling point scale and random fluctuation, so it is constant within a month and changes with the month. Buying several units (2 to 8) scales along. `xmlFilename` is matched against the end of the path. The default table covers the wheat big bag, the wheat big bag pallet, silage bales (square, round) and hay bales (square, round). Straw bales are not included; add a line for them the same way.
+
+`markup` defaults to 1. With a buy price equal to the sell price, buying and selling the same goods back only loses the selling point scale (bales are x0.8 at HB selling points) and the random fluctuation; use a `markup` around 1.2 to rule out arbitrage.
 
 ### fruitType
 

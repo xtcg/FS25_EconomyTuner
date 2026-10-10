@@ -31,6 +31,13 @@
     <station> overrides it for one selling point and fillType; xmlFilename is matched as a path suffix,
     run etDump to see the xmlFilename of every selling point.
 
+    == <shopItem xmlFilename="..." fillType="..." markup="1"/> ==
+    Items the shop (P key) sells as consumables have a fixed price in the game. A shopItem entry makes the price
+    of one unit follow the market instead: capacity (L) / 1000 x this month's sell price of fillType x markup.
+    "This month's sell price" is the price the player sees (difficulty included) times the seasonal factor of the
+    current period, before selling point scale and random fluctuation. Amount options (2..8 bales) scale with it.
+    xmlFilename is matched as a path suffix. Straw bales are not included; add them the same way if wanted.
+
     == <fruitType name="..."> ==
     yield        = harvest yield in litres per ha (the game stores litersPerSqm x 10000; see yieldDump.csv).
     yieldScale   = alternative to yield: multiply the game's yield (e.g. 1.2 = +20 %).
@@ -224,6 +231,15 @@
         Game price 100 EUR/1000 L. price covers what the husbandry auto water supply pays (reads pricePerLiter
         directly); buy covers water stations and water used by machines. HB farm water points stay free (priceScale 0). -->
     <fillType name="WATER"                   price="4" buy="4"/>   <!-- was 100 -->
+
+    <!-- ===== 商店消耗品 Shop consumables priced from the market (plan 2026-10-10) =====
+        Game price: wheat big bag 1500 per 1000 L, silage bales 598, hay bales 192 (per 1000 L). -->
+    <shopItem xmlFilename="objects/bigBag/chickenFood/multiPurchaseBigBag_chickenFood.xml"          fillType="WHEAT"            markup="1"/>
+    <shopItem xmlFilename="objects/bigBagPallet/chickenFood/multiPurchaseBigBagPallet_chickenFood.xml" fillType="WHEAT"         markup="1"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml"                            fillType="SILAGE"           markup="1"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_silageRound.xml"                       fillType="SILAGE"           markup="1"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrass.xml"                          fillType="DRYGRASS_WINDROW" markup="1"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrassRound.xml"                     fillType="DRYGRASS_WINDROW" markup="1"/>
 
     <!-- ===== Selling point overrides (examples) =====
     <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>

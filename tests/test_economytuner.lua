@@ -357,6 +357,48 @@ do
     check("yield dump lists unchanged crops", text:find("BARLEY;7000;7000;0;0;170;170;", 1, true) ~= nil)
 end
 
+-- shop consumables priced from the market -------------------------------------------------------------
+do
+    createFolder(TMP .. "store")
+    local f = assert(io.open(TMP .. "store/wheatBag.xml", "w"))
+    f:write('<vehicle><fillUnit><fillUnitConfigurations><fillUnitConfiguration><fillUnits><fillUnit fillTypes="wheat" capacity="1000"/></fillUnits></fillUnitConfiguration></fillUnitConfigurations></fillUnit></vehicle>')
+    f:close()
+    f = assert(io.open(TMP .. "store/silageBale.xml", "w"))
+    f:write('<vehicle><fillUnit><fillUnitConfigurations><fillUnitConfiguration><fillUnits><fillUnit fillTypes="SILAGE" capacity="5000"/></fillUnits></fillUnitConfiguration></fillUnitConfigurations></fillUnit></vehicle>')
+    f:close()
+    local bag = { xmlFilename = TMP .. "store/wheatBag.xml", price = 1500 }
+    local bale = { xmlFilename = TMP .. "store/silageBale.xml", price = 2992 }
+    local other = { xmlFilename = TMP .. "store/other.xml", price = 777 }
+
+    writeUserConfig(config("", [[
+<fillType name="WHEAT" price="400"/>
+<fillType name="SILAGE" price="44"/>
+<shopItem xmlFilename="store/wheatBag.xml" fillType="WHEAT" markup="1"/>
+<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" markup="1.5"/>
+]]))
+    local mission = startSession(EconomicDifficulty.HARD)
+    mission.environment = newEnvironment(11)
+    g_storeManager.items = { bag, bale, other }
+    local economy = mission.economyManager
+    check("shop wheat bag follows this month's sell price", near(economy:getBuyPrice(bag), 1000 / 1000 * 400 * 1.21, 1e-3))
+    check("shop silage bale: capacity x price x markup", near(economy:getBuyPrice(bale), 5 * 44 * 1.5 * 1.0, 1e-3))
+    check("shop item without a rule keeps its price", near(economy:getBuyPrice(other), 777))
+    local price, upgrade = economy:getBuyPrice(bale, { amountPrice = 2992 * 2 })
+    check("amount options scale with the market", near(price, 5 * 44 * 1.5 * 3, 1e-3) and near(upgrade, 5 * 44 * 1.5 * 2, 1e-3))
+    mission.environment.currentPeriod = 6
+    check("price changes with the month", near(economy:getBuyPrice(bag), 400 * 0.81, 1e-3))
+
+    local result = COMMANDS.etCheck()
+    local f2 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+    local text = f2 and f2:read("a") or ""
+    if f2 then f2:close() end
+    check("etCheck verifies shop items", text:find("OK   wheatbag", 1, true) and text:find("OK   silagebale", 1, true) and result:find("0 failed", 1, true))
+
+    startSession(EconomicDifficulty.EASY).environment = newEnvironment(11)
+    check("shop price shows the player-seen sell price on EASY too", near(g_currentMission.economyManager:getBuyPrice(bag), 400 * 1.21, 1e-3))
+    writeUserConfig(TABLE)
+end
+
 -- etCheck / etInfo ------------------------------------------------------------------------------------
 do
     writeUserConfig(config("", [[
@@ -408,3 +450,24 @@ do
 end
 
 restoreDefaultTable()
+
+-- Engine compatibility regressions from ENV-01 on FS25 1.24.
+do
+    useDefaultTable(config('', '<fruitType name="BARLEY" yieldScale="1.25" seedScale="0.5"/>'))
+    writeUserConfig(EMPTY)
+    local files = EconomyTuner:getConfigFilenames()
+    local stringsOnly = true
+    for _, filename in ipairs(files) do stringsOnly = stringsOnly and type(filename) == "string" end
+    check("GIANTS two-return getFilename never injects a boolean into config paths", stringsOnly)
+    startSession(EconomicDifficulty.HARD)
+    check("real engine order (fruit types before mod fill types) applies BARLEY", near(fruit('BARLEY').literPerSqm, 0.7 * 1.25))
+    local _, checks, failures = EconomyTuner:check()
+    check("real engine order has yield/seed receipts and zero failures", checks == 2 and failures == 0)
+    EconomyTuner:reload()
+    EconomyTuner:reload()
+    check("two reloads keep the original yield and do not stack multipliers", near(fruit('BARLEY').literPerSqm, 0.7 * 1.25))
+    useDefaultTable(EMPTY)
+    EconomyTuner:reload()
+    check("removing fruit override restores original yield and clears stale receipt", near(fruit('BARLEY').literPerSqm, 0.7) and next(EconomyTuner.appliedFruits) == nil)
+    restoreDefaultTable()
+end

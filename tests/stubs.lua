@@ -27,7 +27,7 @@ table.size = function(t)
 end
 
 Utils = {
-    getFilename = function(name, dir) return (dir or "") .. name end,
+    getFilename = function(name, dir) return (dir or "") .. name, dir ~= nil and dir ~= "" end,
     appendedFunction = function(old, new)
         return old ~= nil and function(...) old(...); new(...) end or new
     end,
@@ -245,9 +245,17 @@ function BuyingStation:getEffectiveFillTypePrice(index)
     return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter * multiplier
 end
 
+function EconomyManager:getFillTypeSeasonalFactor(fillType, period) return fillType.economy.factors[period] end
+-- missions that set .environment = { currentPeriod = n } get a seasonal factor, others 1
+function newEnvironment(period)
+    return { currentPeriod = period, getPeriodAndAlphaIntoPeriod = function(self) return self.currentPeriod, 0 end }
+end
 function EconomyManager:getCostPerLiter(index, useMultiplier)
     local multiplier = useMultiplier == false and 1 or EconomyManager.COST_MULTIPLIER[g_currentMission.missionInfo.economicDifficulty]
-    return g_fillTypeManager:getFillTypeByIndex(index).pricePerLiter * multiplier
+    local fillType = g_fillTypeManager:getFillTypeByIndex(index)
+    local environment = g_currentMission.environment
+    local seasonal = environment ~= nil and fillType.economy.factors[environment.currentPeriod] or 1
+    return fillType.pricePerLiter * multiplier * seasonal
 end
 function EconomyManager:saveToXMLFile(handle, key)
     for i, ft in ipairs(g_fillTypeManager:getFillTypes()) do
@@ -278,6 +286,15 @@ function newFruitTypeManager()
     end
     return m
 end
+
+-- store: getBuyPrice(storeItem, configurations) -> price + amount configuration price; storeItem.amountPrice is the
+-- upgrade price of the selected configuration
+function EconomyManager.getBuyPrice(_, storeItem, configurations, saleItem)
+    local price = saleItem ~= nil and saleItem.price or storeItem.price
+    local upgrade = configurations ~= nil and (configurations.amountPrice or 0) or 0
+    return price + upgrade, upgrade
+end
+g_storeManager = { items = {}, getItems = function(self) return self.items end }
 
 Mission00 = { onStartMission = noop }
 
@@ -313,8 +330,8 @@ function startSession(difficulty, stations, savegame)
     g_fruitTypeManager = newFruitTypeManager()
     local missionInfo = { economicDifficulty = difficulty or EconomicDifficulty.HARD, savegameDirectory = TMP .. (savegame or "savegame1") }
     g_fillTypeManager:loadMapData({}, missionInfo, "")
-    g_fillTypeManager:loadModFillTypes()
     g_fruitTypeManager:loadMapData({}, missionInfo, "")
+    g_fillTypeManager:loadModFillTypes()
 
     SAVEGAME_DIRECTORY = missionInfo.savegameDirectory
     local mission = { missionInfo = missionInfo, economyManager = setmetatable({ sellingStations = {} }, { __index = EconomyManager }),
