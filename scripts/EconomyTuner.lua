@@ -142,7 +142,7 @@ end
 ---Reads one table file. Returns nil when the file cannot be opened.
 -- config = { settings = {name = bool} (only keys present in the file), fillTypes = { [NAME] = entry },
 --            fruitTypes = { [NAME] = entry }, stations = { {path=, fillType=, priceScale=} },
---            shopItems = { {path=, fillType=, markup=} } }
+--            shopItems = { {path=, fillType=, markup=, basis="best"|"market"} } }
 function EconomyTuner.readConfig(filename)
     local xmlFile = XMLFile.loadIfExists("economyTunerConfig", filename)
     if xmlFile == nil then
@@ -231,14 +231,20 @@ function EconomyTuner.readConfig(filename)
         local path = xmlFile:getString(key .. "#xmlFilename")
         local fillTypeName = xmlFile:getString(key .. "#fillType")
         local markup = xmlFile:getFloat(key .. "#markup") or 1
+        local basis = string.lower(xmlFile:getString(key .. "#basis") or "best")
         if path == nil or fillTypeName == nil or markup <= 0 then
             warning("%s: shopItem entry %s needs xmlFilename, fillType and markup > 0", filename, key)
             return
         end
+        if basis ~= "best" and basis ~= "market" then
+            warning("%s: shopItem %s basis '%s' must be best or market, using best", filename, path, basis)
+            basis = "best"
+        end
         table.insert(config.shopItems, {
             path = normalizePath(path),
             fillType = string.upper(fillTypeName),
-            markup = markup
+            markup = markup,
+            basis = basis
         })
     end)
 
@@ -769,7 +775,40 @@ function EconomyTuner:getMonthlyPrice(fillType)
     return fillType.pricePerLiter * 1000 * priceMultiplier * (fillType.economy.factors[period] or 1)
 end
 
----Price of one purchasable unit of a shop item that follows the market, or nil when the item has no rule.
+---Highest price any loaded selling station pays for a fillType this month, EUR per 1000 L: the station's base price
+-- (game price x its priceScale) at the seasonal factor of the current period and the player-seen difficulty, without
+-- random fluctuation, great demand or price drop. nil when no selling station accepts the fillType.
+function EconomyTuner:getBestPrice(fillType)
+    local economyManager = g_currentMission ~= nil and g_currentMission.economyManager or nil
+    if economyManager == nil then
+        return nil
+    end
+    local best = nil
+    for _, data in ipairs(economyManager.sellingStations or {}) do
+        local station = data.station
+        if station.acceptedFillTypes[fillType.index] then
+            local price = station.originalFillTypePrices[fillType.index]
+            if price ~= nil and (best == nil or price > best) then
+                best = price
+            end
+        end
+    end
+    if best == nil or fillType.pricePerLiter <= 0 then
+        return nil
+    end
+    return self:getMonthlyPrice(fillType) * best / fillType.pricePerLiter
+end
+
+---EUR per 1000 L a shop rule is based on, or nil when it cannot be computed (then the game price stays).
+function EconomyTuner:getShopRuleBasePrice(rule, fillType)
+    if rule.basis == "market" then
+        return self:getMonthlyPrice(fillType)
+    end
+    return self:getBestPrice(fillType)
+end
+
+---Price of one purchasable unit of a shop item that follows the market, or nil when the item has no rule
+-- or the rule cannot be priced (unknown fillType, no capacity, no buyer for basis "best").
 function EconomyTuner:getShopItemPrice(storeItem)
     local rule = self:getShopItemRule(storeItem)
     if rule == nil then
@@ -780,7 +819,11 @@ function EconomyTuner:getShopItemPrice(storeItem)
     if fillType == nil or capacity == nil then
         return nil
     end
-    return capacity / 1000 * self:getMonthlyPrice(fillType) * rule.markup
+    local base = self:getShopRuleBasePrice(rule, fillType)
+    if base == nil then
+        return nil
+    end
+    return capacity / 1000 * base * rule.markup
 end
 
 function EconomyTuner.economyGetBuyPrice(economyManager, superFunc, storeItem, ...)
@@ -944,12 +987,15 @@ function EconomyTuner:check()
         end
         local fillType = g_fillTypeManager:getFillTypeByName(rule.fillType)
         local capacity = storeItem ~= nil and EconomyTuner.getStoreItemCapacity(storeItem) or nil
+        local base = fillType ~= nil and self:getShopRuleBasePrice(rule, fillType) or nil
         if storeItem == nil or fillType == nil or capacity == nil then
             add(string.format("SKIP %-44s store item, fillType or capacity not found", rule.path))
+        elseif base == nil then
+            add(string.format("SKIP %-44s no selling station buys %s, game price %.0f kept", rule.path, rule.fillType, storeItem.price or 0))
         else
-            local expected = capacity / 1000 * self:getMonthlyPrice(fillType) * rule.markup
+            local expected = capacity / 1000 * base * rule.markup
             local actual = g_currentMission.economyManager:getBuyPrice(storeItem)
-            verify(string.format("%s (%.0f L of %s, was %.0f)", rule.path:match("([^/]+)%.xml$") or rule.path, capacity, rule.fillType, storeItem.price), expected, actual, "")
+            verify(string.format("%s (%.0f L of %s, %s, was %.0f)", rule.path:match("([^/]+)%.xml$") or rule.path, capacity, rule.fillType, rule.basis, storeItem.price), expected, actual, "")
         end
     end
 

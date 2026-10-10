@@ -373,8 +373,8 @@ do
     writeUserConfig(config("", [[
 <fillType name="WHEAT" price="400"/>
 <fillType name="SILAGE" price="44"/>
-<shopItem xmlFilename="store/wheatBag.xml" fillType="WHEAT" markup="1"/>
-<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" markup="1.5"/>
+<shopItem xmlFilename="store/wheatBag.xml" fillType="WHEAT" basis="market"/>
+<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" markup="1.5" basis="market"/>
 ]]))
     local mission = startSession(EconomicDifficulty.HARD)
     mission.environment = newEnvironment(11)
@@ -396,6 +396,41 @@ do
 
     startSession(EconomicDifficulty.EASY).environment = newEnvironment(11)
     check("shop price shows the player-seen sell price on EASY too", near(g_currentMission.economyManager:getBuyPrice(bag), 400 * 1.21, 1e-3))
+
+    -- basis "best" (default): the highest price any selling station pays this month
+    writeUserConfig(config("", [[
+<fillType name="WHEAT" price="400"/>
+<shopItem xmlFilename="store/wheatBag.xml" fillType="WHEAT"/>
+<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" markup="1.1"/>
+]]))
+    mission = startSession(EconomicDifficulty.HARD, STATIONS)
+    mission.environment = newEnvironment(11)
+    economy = mission.economyManager
+    -- dealer pays WHEAT x1.2, mill x1; dealer SILAGE x0.8, mill SILAGE x1 (game price 0.121)
+    check("best basis: highest station scale x seasonal factor", near(economy:getBuyPrice(bag), 400 * 1.2 * 1.21, 1e-3))
+    check("best basis ignores random fluctuation", (function()
+        mission.stations.dealer.fillTypePriceRandomDelta[wheat().index] = 0.05
+        return near(economy:getBuyPrice(bag), 400 * 1.2 * 1.21, 1e-3)
+    end)())
+    check("best basis with markup: silage picks the x1 station", near(economy:getBuyPrice(bale), 5 * 121 * 1.0 * 1.0 * 1.1 * (silage().economy.factors[11]), 1e-2))
+    mission.environment.currentPeriod = 6
+    check("best basis follows the month", near(economy:getBuyPrice(bag), 400 * 1.2 * 0.81, 1e-3))
+    check("best basis: etCheck verifies and reports the basis", (function()
+        local r = COMMANDS.etCheck()
+        local f3 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+        local t = f3 and f3:read("a") or ""
+        if f3 then f3:close() end
+        return t:find("OK   wheatbag (1000 L of WHEAT, best", 1, true) ~= nil and r:find("0 failed", 1, true) ~= nil
+    end)())
+
+    -- nobody buys it: the game price stays
+    startSession(EconomicDifficulty.HARD).environment = newEnvironment(11)
+    check("best basis without a buyer keeps the game price", near(g_currentMission.economyManager:getBuyPrice(bag), 1500))
+    COMMANDS.etCheck()
+    local f4 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+    local t4 = f4 and f4:read("a") or ""
+    if f4 then f4:close() end
+    check("etCheck explains the kept price", t4:find("no selling station buys WHEAT, game price 1500 kept", 1, true) ~= nil)
     writeUserConfig(TABLE)
 end
 

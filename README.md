@@ -58,12 +58,18 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 商店（P 键）里的消耗品是固定标价，例如小麦大袋 1500 £/1000 L、青贮草捆 598、干草草捆 192。`<shopItem>` 让它们的单价随市场走：
 
 ```xml
-<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE" markup="1"/>
+<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE"/>
 ```
 
-单价 = 容量（L）÷ 1000 × **当月卖价** × `markup`。当月卖价是玩家看到的卖价（含难度）乘当前 period 的季节系数，未计收购点倍率和随机波动，所以同一个月内价格不变，换月才变。购买多件（2 到 8 件）时同比缩放。`xmlFilename` 按路径结尾匹配。默认表已包含：小麦大袋、小麦大袋托盘、青贮草捆（方形、圆形）、干草草捆（方形、圆形）。秸秆草捆没有加，需要的话照样写一行。
+单价 = 容量（L）÷ 1000 × **当月最高收购价** × `markup`（默认 1）。
 
-`markup` 默认 1。买入价等于卖价意味着买进后原价卖出（草捆在 HB 的收购点是 0.8 倍）只亏收购点倍率和波动，想避免套利可以把 `markup` 设成 1.2 左右。
+- `basis="best"`（默认）：所有收购点里这种货物当月出价最高的那个（基础价 × 该点倍率 × 当前月份的季节系数，含难度，不含随机波动、大订单、压价）。没有任何收购点收这种货物时，保持游戏原价。
+- `basis="market"`：货物自身的当月卖价，不乘收购点倍率。
+- 同一个月内价格不变，换月才变；一次买多件（2 到 8 件）同比缩放。`xmlFilename` 按路径结尾匹配。
+
+默认表包含所有跟动物饲养相关的商店商品：小麦和燕麦大袋（含托盘）、青贮、干草、秸秆草捆（方形和圆形）。猪饲料、矿物饲料、代乳粉、仔猪料、木屑、鱼饲料、猫粮、狗粮也写了规则，但 HB 地图上没有收购点收这些，所以保持原价；以后有地图或 mod 加了收购点就自动生效。`etCheck` 会逐项列出哪些生效、哪些因为没人收而保持原价。
+
+不阻止低买高卖：玩家在价格低的月份屯粮、价格高的月份卖掉，是允许的。
 
 ### 作物：`<fruitType>`
 
@@ -199,12 +205,18 @@ Units are EUR per 1000 litres, or per 1000 pieces for piece goods such as eggs a
 Consumables in the shop (P key) have fixed prices, e.g. wheat big bag 1500 per 1000 L, silage bales 598, hay bales 192. `<shopItem>` makes their unit price follow the market:
 
 ```xml
-<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE" markup="1"/>
+<shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE"/>
 ```
 
-Unit price = capacity (L) / 1000 × **this month's sell price** × `markup`. This month's sell price is the price the player sees (difficulty included) times the seasonal factor of the current period, before selling point scale and random fluctuation, so it is constant within a month and changes with the month. Buying several units (2 to 8) scales along. `xmlFilename` is matched against the end of the path. The default table covers the wheat big bag, the wheat big bag pallet, silage bales (square, round) and hay bales (square, round). Straw bales are not included; add a line for them the same way.
+Unit price = capacity (L) / 1000 × **the highest price paid this month** × `markup` (default 1).
 
-`markup` defaults to 1. With a buy price equal to the sell price, buying and selling the same goods back only loses the selling point scale (bales are x0.8 at HB selling points) and the random fluctuation; use a `markup` around 1.2 to rule out arbitrage.
+- `basis="best"` (default): the selling point that pays the most for the fillType this month (base price × its priceScale × the seasonal factor of the current period, difficulty included, without random fluctuation, great demand or price drop). If no selling point buys the fillType the game price stays.
+- `basis="market"`: the fillType's own sell price this month, without selling point scale.
+- The price is constant within a month and changes with the month; buying several units (2 to 8) scales along. `xmlFilename` is matched against the end of the path.
+
+The default table covers every animal husbandry item in the shop: wheat and oat big bags (and pallets), silage, hay and straw bales (square and round). Pig food, mineral feed, milk powder, piglet food, wood shavings, fish feed, cat food and dog food have rules too, but no selling point on the Hof Bergmann map buys them, so they keep the game price; they follow the market as soon as a map or mod adds a buyer. `etCheck` lists which rules are active and which are kept because nobody buys.
+
+Buying cheap and selling dear is not prevented: stocking up in a low month and selling in a high month is allowed.
 
 ### fruitType
 

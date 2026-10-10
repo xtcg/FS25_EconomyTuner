@@ -31,12 +31,14 @@
     <station> overrides it for one selling point and fillType; xmlFilename is matched as a path suffix,
     run etDump to see the xmlFilename of every selling point.
 
-    == <shopItem xmlFilename="..." fillType="..." markup="1"/> ==
+    == <shopItem xmlFilename="..." fillType="..." markup="1" basis="best"/> ==
     Items the shop (P key) sells as consumables have a fixed price in the game. A shopItem entry makes the price
-    of one unit follow the market instead: capacity (L) / 1000 x this month's sell price of fillType x markup.
-    "This month's sell price" is the price the player sees (difficulty included) times the seasonal factor of the
-    current period, before selling point scale and random fluctuation. Amount options (2..8 bales) scale with it.
-    xmlFilename is matched as a path suffix. Straw bales are not included; add them the same way if wanted.
+    of one unit follow the market instead: capacity (L) / 1000 x this month's price of fillType x markup.
+    basis="best" (default): the highest price any selling point pays for the fillType this month (its base price
+    x its priceScale x the seasonal factor of the current period, difficulty included, without random
+    fluctuation, great demand or price drop). If no selling point buys the fillType the game price stays.
+    basis="market": the fillType's own sell price this month, without selling point scale.
+    Amount options (2..8 bales) scale with it. xmlFilename is matched as a path suffix.
 
     == <fruitType name="..."> ==
     yield        = harvest yield in litres per ha (the game stores litersPerSqm x 10000; see yieldDump.csv).
@@ -232,14 +234,33 @@
         directly); buy covers water stations and water used by machines. HB farm water points stay free (priceScale 0). -->
     <fillType name="WATER"                   price="4" buy="4"/>   <!-- was 100 -->
 
-    <!-- ===== 商店消耗品 Shop consumables priced from the market (plan 2026-10-10) =====
-        Game price: wheat big bag 1500 per 1000 L, silage bales 598, hay bales 192 (per 1000 L). -->
-    <shopItem xmlFilename="objects/bigBag/chickenFood/multiPurchaseBigBag_chickenFood.xml"          fillType="WHEAT"            markup="1"/>
-    <shopItem xmlFilename="objects/bigBagPallet/chickenFood/multiPurchaseBigBagPallet_chickenFood.xml" fillType="WHEAT"         markup="1"/>
-    <shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml"                            fillType="SILAGE"           markup="1"/>
-    <shopItem xmlFilename="objects/buyableBales/buyableBales_silageRound.xml"                       fillType="SILAGE"           markup="1"/>
-    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrass.xml"                          fillType="DRYGRASS_WINDROW" markup="1"/>
-    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrassRound.xml"                     fillType="DRYGRASS_WINDROW" markup="1"/>
+    <!-- ===== 商店消耗品 Shop consumables, animal husbandry (plan 2026-10-10) =====
+        Price of one unit = capacity / 1000 x the highest price any selling point pays this month (basis="best").
+        Game prices per 1000 L: wheat / oat big bag 1500 / 1400, silage bales 598, hay bales 192, straw bales 164.
+        Players may buy cheap and sell dear on purpose: nothing stops that. -->
+    <shopItem xmlFilename="objects/bigBag/chickenFood/multiPurchaseBigBag_chickenFood.xml" fillType="WHEAT"/>
+    <shopItem xmlFilename="objects/bigBagPallet/chickenFood/multiPurchaseBigBagPallet_chickenFood.xml" fillType="WHEAT"/>
+    <shopItem xmlFilename="objects/bigBag/horseFood/multiPurchaseBigBag_horseFood.xml" fillType="OAT"/>
+    <shopItem xmlFilename="objects/bigBagPallet/horseFood/multiPurchaseBigBagPallet_horseFood.xml" fillType="OAT"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_silage.xml" fillType="SILAGE"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_silageRound.xml" fillType="SILAGE"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrass.xml" fillType="DRYGRASS_WINDROW"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_dryGrassRound.xml" fillType="DRYGRASS_WINDROW"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_straw.xml" fillType="STRAW"/>
+    <shopItem xmlFilename="objects/buyableBales/buyableBales_strawRound.xml" fillType="STRAW"/>
+
+    <!-- Animal supplies below have no buyer on the Hof Bergmann map (no selling point accepts them), so they keep
+         the game price there. They follow the market as soon as a map or mod adds a selling point for them.
+         Run etCheck to see which ones are active. -->
+    <shopItem xmlFilename="objects/bigBag/pigFood/multiPurchaseBigBag_pigFood.xml" fillType="PIGFOOD"/>
+    <shopItem xmlFilename="objects/bigBagPallet/pigFood/multiPurchaseBigBagPallet_pigFood.xml" fillType="PIGFOOD"/>
+    <shopItem xmlFilename="objects/pallets/mineralFeedPallet/multiPurchasePallet_mineralFeedPallet.xml" fillType="MINERAL_FEED"/>
+    <shopItem xmlFilename="objects/pallets/pigletFoodSack/pigletFoodSack_mip.xml" fillType="PIGLETFOOD"/>
+    <shopItem xmlFilename="objects/pallets/milkPowderSack/milkPowderSack_mip.xml" fillType="MILKPOWDER"/>
+    <shopItem xmlFilename="objects/pallets/woodShavingsPackage/woodShavingsPackage_mip.xml" fillType="WOODSHAVINGS"/>
+    <shopItem xmlFilename="objects/pallets/fishFood/fishFood_mpi.xml" fillType="FISHFEED"/>
+    <shopItem xmlFilename="objects/pallets/catFoodPallet/catFoodPallet.xml" fillType="CATFOOD"/>
+    <shopItem xmlFilename="objects/pallets/dogFood/dogFood.xml" fillType="DOGFOOD"/>
 
     <!-- ===== Selling point overrides (examples) =====
     <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>
