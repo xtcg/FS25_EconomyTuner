@@ -68,7 +68,7 @@ Formerly `FS25_SellPrices`. Since 0.2.0.0: buy prices, harvest yield and seed us
 - `price="N"`（固定价，不需要 fillType）：每 1000 L 固定 N，全年不变，不受月份、收购点和难度影响。
 - 同一个月内价格不变，换月才变；一次买多件（2 到 8 件）同比缩放。`xmlFilename` 按路径结尾匹配。
 
-默认表包含所有跟动物饲养相关的商店商品：小麦和燕麦大袋（含托盘）、青贮、干草、秸秆草捆（方形和圆形）按当月最高收购价；HB 上没有收购点收的猪饲料、矿物饲料、代乳粉、仔猪料、木屑、鱼饲料、猫粮、狗粮用固定价，锚点是 英国策划价（£/吨）× 农业价格倍率 K_p 2.1603 × 密度，各项的 £/吨 写在 `config/economy.xml` 的注释里（猪料 330、仔猪料 650、矿物饲料 800、代乳粉 1900、木屑 250、鱼饲料 1200、猫粮 1600、狗粮 1000，都是策划假设，不是实时报价）。`etCheck` 会逐项列出实际生效的价格。
+默认表包含所有跟动物饲养相关的商店商品：小麦和燕麦大袋（含托盘）、青贮、干草、秸秆草捆（方形和圆形）按当月最高收购价；HB 上没有收购点收的猪饲料、矿物饲料、代乳粉、仔猪料、木屑、鱼饲料、猫粮、狗粮用固定价，锚点是 英国平均价（£/吨）× 农业价格倍率 K_p 2.1603 × 密度，乘 K_p 是为了让饲料和它的原料谷物、秸秆保持同一价格水平。£/吨 取自 AHDB、Defra 和零售价（猪料 330、仔猪保育料 1200、牛用矿物 820、犊牛代乳粉 2300、木屑 450、鳟鱼料 1500、干猫粮 3500、干狗粮 2500），出处和区间写在 `config/economy.xml` 的注释里，是取整后的大致平均，不是实时报价。`etCheck` 会逐项列出实际生效的价格。
 
 不阻止低买高卖：玩家在价格低的月份屯粮、价格高的月份卖掉，是允许的。
 
@@ -216,7 +216,7 @@ Unit price = capacity (L) / 1000 × **the highest price paid this month** × `ma
 - `price="N"` (fixed, no fillType needed): a fixed N per 1000 L all year, independent of month, selling points and difficulty.
 - The price is constant within a month and changes with the month; buying several units (2 to 8) scales along. `xmlFilename` is matched against the end of the path.
 
-The default table covers every animal husbandry item in the shop: wheat and oat big bags (and pallets), silage, hay and straw bales (square and round). Items that no selling point buys on the Hof Bergmann map (pig food, mineral feed, milk powder, piglet food, wood shavings, fish feed, cat food, dog food) get a fixed price instead. Anchor: planning price in GBP per tonne × agricultural price factor K_p 2.1603 × density; the GBP/t values are in the comments of `config/economy.xml` (pig feed 330, piglet feed 650, mineral feed 800, milk replacer 1900, wood shavings 250, fish feed 1200, cat food 1600, dog food 1000), planning assumptions, not quotes. `etCheck` lists the prices actually in effect.
+The default table covers every animal husbandry item in the shop: wheat and oat big bags (and pallets), silage, hay and straw bales (square and round). Items that no selling point buys on the Hof Bergmann map (pig food, mineral feed, milk powder, piglet food, wood shavings, fish feed, cat food, dog food) get a fixed price instead. Anchor: average UK price in GBP per tonne × agricultural price factor K_p 2.1603 × density; K_p keeps feed at the same price level as the grain and straw it comes from. GBP/t from AHDB, Defra and retail listings (pig feed 330, piglet creep 1200, cattle minerals 820, calf milk replacer 2300, wood shavings 450, trout feed 1500, dry cat food 3500, dry dog food 2500); sources and ranges are in the comments of `config/economy.xml`; rounded averages, not live quotes. `etCheck` lists the prices actually in effect.
 
 Buying cheap and selling dear is not prevented: stocking up in a low month and selling in a high month is allowed.
 
