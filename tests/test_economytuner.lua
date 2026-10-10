@@ -423,7 +423,34 @@ do
         return t:find("OK   wheatbag (1000 L of WHEAT, best", 1, true) ~= nil and r:find("0 failed", 1, true) ~= nil
     end)())
 
+    -- fixed price: per 1000 L, no fillType needed, independent of month, stations and difficulty
+    writeUserConfig(config("", [[
+<shopItem xmlFilename="store/wheatBag.xml" price="463"/>
+<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" basis="fixed" price="100" markup="2"/>
+<shopItem xmlFilename="store/other.xml" basis="fixed"/>
+]]))
+    LOG = {}
+    mission = startSession(EconomicDifficulty.EASY, STATIONS)
+    mission.environment = newEnvironment(11)
+    economy = mission.economyManager
+    check("fixed price: capacity x price per 1000 L", near(economy:getBuyPrice(bag), 463, 1e-3))
+    check("fixed price with markup", near(economy:getBuyPrice(bale), 5 * 100 * 2, 1e-3))
+    mission.environment.currentPeriod = 3
+    check("fixed price does not change with the month", near(economy:getBuyPrice(bag), 463, 1e-3))
+    check("fixed rule without price is rejected", logContains("shopItem entry") and near(economy:getBuyPrice(other), 777))
+    price, upgrade = economy:getBuyPrice(bag, { amountPrice = 1500 })
+    check("fixed price scales amount options", near(price, 463 * 2, 1e-3) and near(upgrade, 463, 1e-3))
+    COMMANDS.etCheck()
+    local f5 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+    local t5 = f5 and f5:read("a") or ""
+    if f5 then f5:close() end
+    check("etCheck verifies fixed shop prices", t5:find("OK   wheatbag (1000 L of -, fixed", 1, true) ~= nil)
+
     -- nobody buys it: the game price stays
+    writeUserConfig(config("", [[
+<shopItem xmlFilename="store/wheatBag.xml" fillType="WHEAT"/>
+<shopItem xmlFilename="store/silageBale.xml" fillType="SILAGE" markup="1.1"/>
+]]))
     startSession(EconomicDifficulty.HARD).environment = newEnvironment(11)
     check("best basis without a buyer keeps the game price", near(g_currentMission.economyManager:getBuyPrice(bag), 1500))
     COMMANDS.etCheck()

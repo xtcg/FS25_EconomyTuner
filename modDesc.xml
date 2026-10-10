@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="110">
     <author>xtcg</author>
-    <version>0.2.0.1</version>
+    <version>0.3.0.0</version>
     <title>
         <en>Economy Tuner</en>
         <de>Wirtschafts-Tuner</de>
@@ -11,6 +11,7 @@
 
 - Sell prices, seasonal price curves, buy prices of seed / fertilizer / fuel
 - Harvest yield and seed usage per crop
+- Shop consumables (feed, bales, bags) priced from the best buyer of the month, or at a fixed price
 - Works out of the box with the table shipped in the mod; prices hold on every economic difficulty
 - Your own overrides: modSettings/FS25_EconomyTuner/global.xml (all savegames) and savegameN.xml (one savegame), or a FS25_EconomyTuner.xml inside the savegame folder
 - Saved price history and price fluctuation curves are rescaled to the new prices

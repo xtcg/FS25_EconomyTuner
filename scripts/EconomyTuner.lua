@@ -142,7 +142,7 @@ end
 ---Reads one table file. Returns nil when the file cannot be opened.
 -- config = { settings = {name = bool} (only keys present in the file), fillTypes = { [NAME] = entry },
 --            fruitTypes = { [NAME] = entry }, stations = { {path=, fillType=, priceScale=} },
---            shopItems = { {path=, fillType=, markup=, basis="best"|"market"} } }
+--            shopItems = { {path=, fillType=, markup=, basis="best"|"market"|"fixed", price=} } }
 function EconomyTuner.readConfig(filename)
     local xmlFile = XMLFile.loadIfExists("economyTunerConfig", filename)
     if xmlFile == nil then
@@ -231,20 +231,22 @@ function EconomyTuner.readConfig(filename)
         local path = xmlFile:getString(key .. "#xmlFilename")
         local fillTypeName = xmlFile:getString(key .. "#fillType")
         local markup = xmlFile:getFloat(key .. "#markup") or 1
-        local basis = string.lower(xmlFile:getString(key .. "#basis") or "best")
-        if path == nil or fillTypeName == nil or markup <= 0 then
-            warning("%s: shopItem entry %s needs xmlFilename, fillType and markup > 0", filename, key)
-            return
-        end
-        if basis ~= "best" and basis ~= "market" then
-            warning("%s: shopItem %s basis '%s' must be best or market, using best", filename, path, basis)
+        local price = xmlFile:getFloat(key .. "#price")
+        local basis = string.lower(xmlFile:getString(key .. "#basis") or (price ~= nil and "fixed" or "best"))
+        if basis ~= "best" and basis ~= "market" and basis ~= "fixed" then
+            warning("%s: shopItem %s basis '%s' must be best, market or fixed, using best", filename, tostring(path), basis)
             basis = "best"
+        end
+        if path == nil or markup <= 0 or (basis == "fixed" and (price == nil or price <= 0)) or (basis ~= "fixed" and fillTypeName == nil) then
+            warning("%s: shopItem entry %s needs xmlFilename, markup > 0 and a fillType (best, market) or price > 0 (fixed)", filename, key)
+            return
         end
         table.insert(config.shopItems, {
             path = normalizePath(path),
-            fillType = string.upper(fillTypeName),
+            fillType = fillTypeName ~= nil and string.upper(fillTypeName) or nil,
             markup = markup,
-            basis = basis
+            basis = basis,
+            price = price
         })
     end)
 
@@ -801,7 +803,9 @@ end
 
 ---EUR per 1000 L a shop rule is based on, or nil when it cannot be computed (then the game price stays).
 function EconomyTuner:getShopRuleBasePrice(rule, fillType)
-    if rule.basis == "market" then
+    if rule.basis == "fixed" then
+        return rule.price
+    elseif rule.basis == "market" then
         return self:getMonthlyPrice(fillType)
     end
     return self:getBestPrice(fillType)
@@ -814,9 +818,9 @@ function EconomyTuner:getShopItemPrice(storeItem)
     if rule == nil then
         return nil
     end
-    local fillType = g_fillTypeManager:getFillTypeByName(rule.fillType)
+    local fillType = rule.fillType ~= nil and g_fillTypeManager:getFillTypeByName(rule.fillType) or nil
     local capacity = EconomyTuner.getStoreItemCapacity(storeItem)
-    if fillType == nil or capacity == nil then
+    if (fillType == nil and rule.basis ~= "fixed") or capacity == nil then
         return nil
     end
     local base = self:getShopRuleBasePrice(rule, fillType)
@@ -985,17 +989,17 @@ function EconomyTuner:check()
                 break
             end
         end
-        local fillType = g_fillTypeManager:getFillTypeByName(rule.fillType)
+        local fillType = rule.fillType ~= nil and g_fillTypeManager:getFillTypeByName(rule.fillType) or nil
         local capacity = storeItem ~= nil and EconomyTuner.getStoreItemCapacity(storeItem) or nil
-        local base = fillType ~= nil and self:getShopRuleBasePrice(rule, fillType) or nil
-        if storeItem == nil or fillType == nil or capacity == nil then
+        local base = (fillType ~= nil or rule.basis == "fixed") and self:getShopRuleBasePrice(rule, fillType) or nil
+        if storeItem == nil or (fillType == nil and rule.basis ~= "fixed") or capacity == nil then
             add(string.format("SKIP %-44s store item, fillType or capacity not found", rule.path))
         elseif base == nil then
             add(string.format("SKIP %-44s no selling station buys %s, game price %.0f kept", rule.path, rule.fillType, storeItem.price or 0))
         else
             local expected = capacity / 1000 * base * rule.markup
             local actual = g_currentMission.economyManager:getBuyPrice(storeItem)
-            verify(string.format("%s (%.0f L of %s, %s, was %.0f)", rule.path:match("([^/]+)%.xml$") or rule.path, capacity, rule.fillType, rule.basis, storeItem.price), expected, actual, "")
+            verify(string.format("%s (%.0f L of %s, %s, was %.0f)", rule.path:match("([^/]+)%.xml$") or rule.path, capacity, rule.fillType or "-", rule.basis, storeItem.price), expected, actual, "")
         end
     end
 

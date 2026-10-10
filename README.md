@@ -2,7 +2,7 @@
 
 [中文](#中文) | [English](#english)
 
-Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and seed usage, a default table that works out of the box, and per-savegame overrides.
+Formerly `FS25_SellPrices`. Since 0.2.0.0: buy prices, harvest yield and seed usage, a default table that works out of the box, per-savegame overrides. 0.3.0.0 adds shop consumable pricing (`<shopItem>`), the `etCheck` / `etInfo` verification commands and the filled-in default table.
 
 ---
 
@@ -65,9 +65,10 @@ Formerly `FS25_SellPrices`. Version 0.2.0.0 adds buy prices, harvest yield and s
 
 - `basis="best"`（默认）：所有收购点里这种货物当月出价最高的那个（基础价 × 该点倍率 × 当前月份的季节系数，含难度，不含随机波动、大订单、压价）。没有任何收购点收这种货物时，保持游戏原价。
 - `basis="market"`：货物自身的当月卖价，不乘收购点倍率。
+- `price="N"`（固定价，不需要 fillType）：每 1000 L 固定 N，全年不变，不受月份、收购点和难度影响。
 - 同一个月内价格不变，换月才变；一次买多件（2 到 8 件）同比缩放。`xmlFilename` 按路径结尾匹配。
 
-默认表包含所有跟动物饲养相关的商店商品：小麦和燕麦大袋（含托盘）、青贮、干草、秸秆草捆（方形和圆形）。猪饲料、矿物饲料、代乳粉、仔猪料、木屑、鱼饲料、猫粮、狗粮也写了规则，但 HB 地图上没有收购点收这些，所以保持原价；以后有地图或 mod 加了收购点就自动生效。`etCheck` 会逐项列出哪些生效、哪些因为没人收而保持原价。
+默认表包含所有跟动物饲养相关的商店商品：小麦和燕麦大袋（含托盘）、青贮、干草、秸秆草捆（方形和圆形）按当月最高收购价；HB 上没有收购点收的猪饲料、矿物饲料、代乳粉、仔猪料、木屑、鱼饲料、猫粮、狗粮用固定价，锚点是 英国策划价（£/吨）× 农业价格倍率 K_p 2.1603 × 密度，各项的 £/吨 写在 `config/economy.xml` 的注释里（猪料 330、仔猪料 650、矿物饲料 800、代乳粉 1900、木屑 250、鱼饲料 1200、猫粮 1600、狗粮 1000，都是策划假设，不是实时报价）。`etCheck` 会逐项列出实际生效的价格。
 
 不阻止低买高卖：玩家在价格低的月份屯粮、价格高的月份卖掉，是允许的。
 
@@ -212,9 +213,10 @@ Unit price = capacity (L) / 1000 × **the highest price paid this month** × `ma
 
 - `basis="best"` (default): the selling point that pays the most for the fillType this month (base price × its priceScale × the seasonal factor of the current period, difficulty included, without random fluctuation, great demand or price drop). If no selling point buys the fillType the game price stays.
 - `basis="market"`: the fillType's own sell price this month, without selling point scale.
+- `price="N"` (fixed, no fillType needed): a fixed N per 1000 L all year, independent of month, selling points and difficulty.
 - The price is constant within a month and changes with the month; buying several units (2 to 8) scales along. `xmlFilename` is matched against the end of the path.
 
-The default table covers every animal husbandry item in the shop: wheat and oat big bags (and pallets), silage, hay and straw bales (square and round). Pig food, mineral feed, milk powder, piglet food, wood shavings, fish feed, cat food and dog food have rules too, but no selling point on the Hof Bergmann map buys them, so they keep the game price; they follow the market as soon as a map or mod adds a buyer. `etCheck` lists which rules are active and which are kept because nobody buys.
+The default table covers every animal husbandry item in the shop: wheat and oat big bags (and pallets), silage, hay and straw bales (square and round). Items that no selling point buys on the Hof Bergmann map (pig food, mineral feed, milk powder, piglet food, wood shavings, fish feed, cat food, dog food) get a fixed price instead. Anchor: planning price in GBP per tonne × agricultural price factor K_p 2.1603 × density; the GBP/t values are in the comments of `config/economy.xml` (pig feed 330, piglet feed 650, mineral feed 800, milk replacer 1900, wood shavings 250, fish feed 1200, cat food 1600, dog food 1000), planning assumptions, not quotes. `etCheck` lists the prices actually in effect.
 
 Buying cheap and selling dear is not prevented: stocking up in a low month and selling in a high month is allowed.
 

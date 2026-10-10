@@ -38,6 +38,7 @@
     x its priceScale x the seasonal factor of the current period, difficulty included, without random
     fluctuation, great demand or price drop). If no selling point buys the fillType the game price stays.
     basis="market": the fillType's own sell price this month, without selling point scale.
+    price="N" (basis fixed, no fillType needed): a fixed price of N EUR per 1000 L, constant all year.
     Amount options (2..8 bales) scale with it. xmlFilename is matched as a path suffix.
 
     == <fruitType name="..."> ==
@@ -249,18 +250,19 @@
     <shopItem xmlFilename="objects/buyableBales/buyableBales_straw.xml" fillType="STRAW"/>
     <shopItem xmlFilename="objects/buyableBales/buyableBales_strawRound.xml" fillType="STRAW"/>
 
-    <!-- Animal supplies below have no buyer on the Hof Bergmann map (no selling point accepts them), so they keep
-         the game price there. They follow the market as soon as a map or mod adds a selling point for them.
-         Run etCheck to see which ones are active. -->
-    <shopItem xmlFilename="objects/bigBag/pigFood/multiPurchaseBigBag_pigFood.xml" fillType="PIGFOOD"/>
-    <shopItem xmlFilename="objects/bigBagPallet/pigFood/multiPurchaseBigBagPallet_pigFood.xml" fillType="PIGFOOD"/>
-    <shopItem xmlFilename="objects/pallets/mineralFeedPallet/multiPurchasePallet_mineralFeedPallet.xml" fillType="MINERAL_FEED"/>
-    <shopItem xmlFilename="objects/pallets/pigletFoodSack/pigletFoodSack_mip.xml" fillType="PIGLETFOOD"/>
-    <shopItem xmlFilename="objects/pallets/milkPowderSack/milkPowderSack_mip.xml" fillType="MILKPOWDER"/>
-    <shopItem xmlFilename="objects/pallets/woodShavingsPackage/woodShavingsPackage_mip.xml" fillType="WOODSHAVINGS"/>
-    <shopItem xmlFilename="objects/pallets/fishFood/fishFood_mpi.xml" fillType="FISHFEED"/>
-    <shopItem xmlFilename="objects/pallets/catFoodPallet/catFoodPallet.xml" fillType="CATFOOD"/>
-    <shopItem xmlFilename="objects/pallets/dogFood/dogFood.xml" fillType="DOGFOOD"/>
+    <!-- Animal supplies that no selling point buys on the Hof Bergmann map get a fixed shop price instead (EUR per 1000 L).
+         Anchor: planning price of the feed in GBP per tonne x K_p 2.1603 (the factor used for crops) x density.
+         GBP/t are planning assumptions, not quotes: pig finisher 330, piglet creep 650, mineral feed 800, milk
+         replacer 1900, wood shavings 250, fish feed 1200, cat food 1600, dog food 1000. -->
+    <shopItem xmlFilename="objects/bigBag/pigFood/multiPurchaseBigBag_pigFood.xml" price="463"/>   <!-- PIGFOOD 330/t -> 463 per unit, was 1000 -->
+    <shopItem xmlFilename="objects/bigBagPallet/pigFood/multiPurchaseBigBagPallet_pigFood.xml" price="463"/>   <!-- PIGFOOD 330/t -> 463 per unit, was 1000 -->
+    <shopItem xmlFilename="objects/pallets/pigletFoodSack/pigletFoodSack_mip.xml" price="913"/>   <!-- PIGLETFOOD 650/t -> 91 per unit, was 50 -->
+    <shopItem xmlFilename="objects/pallets/mineralFeedPallet/multiPurchasePallet_mineralFeedPallet.xml" price="1123"/>   <!-- MINERAL_FEED 800/t -> 1179 per unit, was 1000 -->
+    <shopItem xmlFilename="objects/pallets/milkPowderSack/milkPowderSack_mip.xml" price="4104"/>   <!-- MILKPOWDER 1900/t -> 410 per unit, was 25 -->
+    <shopItem xmlFilename="objects/pallets/woodShavingsPackage/woodShavingsPackage_mip.xml" price="162"/>   <!-- WOODSHAVINGS 250/t -> 162 per unit, was 50 -->
+    <shopItem xmlFilename="objects/pallets/fishFood/fishFood_mpi.xml" price="2592"/>   <!-- FISHFEED 1200/t -> 130 per unit, was 25 -->
+    <shopItem xmlFilename="objects/pallets/catFoodPallet/catFoodPallet.xml" price="2696"/>   <!-- CATFOOD 1600/t -> 129 per unit, was 6 -->
+    <shopItem xmlFilename="objects/pallets/dogFood/dogFood.xml" price="1685"/>   <!-- DOGFOOD 1000/t -> 168 per unit, was 50 -->
 
     <!-- ===== Selling point overrides (examples) =====
     <station xmlFilename="placeables/animalDealer/animalDealer.xml" fillType="SILAGE" priceScale="0.5"/>
