@@ -16,14 +16,14 @@ local function fruit(name) return g_fruitTypeManager:getFruitTypeByName(name) en
 local SHIPPED_FILE = REPO .. "config/economy.xml"
 local DEFAULT_FILE = g_currentModDirectory .. "config/economy.xml"
 local function readFile(path)
-    local f = assert(io.open(path, "r"))
+    local f = assert(REAL_IO.open(path, "r"))
     local text = f:read("a")
     f:close()
     return text
 end
 local SHIPPED = readFile(SHIPPED_FILE)
 local function useDefaultTable(text)
-    local f = assert(io.open(DEFAULT_FILE, "w"))
+    local f = assert(REAL_IO.open(DEFAULT_FILE, "w"))
     f:write(text)
     f:close()
 end
@@ -44,11 +44,11 @@ end
 do
     local cfg = EconomyTuner.readConfig(SHIPPED_FILE)
     check("default table parses", cfg ~= nil)
-    check("default table has 126 fillTypes", table.size(cfg.fillTypes) == 126)
+    check("default table has 128 fillTypes", table.size(cfg.fillTypes) == 128)
     check("default WHEAT is 337", near(cfg.fillTypes.WHEAT.price, 337))
     check("default settings read", cfg.settings.normalizeDifficulty == true and cfg.settings.dumpOnStart == false)
     check("default example station is commented out", #cfg.stations == 0)
-    check("default MILK / RAWMILK follow the plan", near(cfg.fillTypes.MILK.price, 907) and near(cfg.fillTypes.RAWMILK.price, 907))
+    check("default MILK / RAWMILK follow the plan", near(cfg.fillTypes.MILK.price, 1800) and near(cfg.fillTypes.RAWMILK.price, 1800))
     check("default wheat stays, potato stays", near(cfg.fillTypes.POTATO.price, 222) and cfg.fruitTypes.WHEAT == nil)
     check("default seed and fertilizer buy prices undo the BayWa scale", near(cfg.fillTypes.SEEDS.buy * 0.95, 300, 1e-4) and near(cfg.fillTypes.FERTILIZER.buy * 0.70, 350, 1e-4))
     local shop = {}
@@ -71,7 +71,7 @@ do
     check("global override template created", fileExists(g_currentModSettingsDirectory .. "global.xml"))
     check("template is a valid empty table", EconomyTuner.readConfig(g_currentModSettingsDirectory .. "global.xml") ~= nil)
     check("default table is a no-op for WHEAT on HARD", near(wheat().pricePerLiter, 0.337))
-    check("default table changes MILK and SILAGE on HARD", table.size(EconomyTuner.applied) == 2 and near(milk().pricePerLiter, 0.907) and near(silage().pricePerLiter, 0.044))
+    check("default table changes MILK and SILAGE on HARD", table.size(EconomyTuner.applied) == 2 and near(milk().pricePerLiter, 1.8) and near(silage().pricePerLiter, 0.044))
     check("default table: seed buy via BayWa scale is 300", near(BuyingStation.getEffectiveFillTypePrice({}, seeds().index) * 0.95, 0.300, 1e-6))
     check("log counts entries", logContains("2 changed, 2 already at table value"))
     check("float32 game price counts as unchanged", wheat().pricePerLiter ~= 0.337 and EconomyTuner:getOriginalPrice(wheat().index) == nil)
@@ -151,7 +151,7 @@ do
     check("per-savegame file leaves the rest of global alone", near(milk().pricePerLiter * EconomyTuner.getMeanFactor(milk().economy.factors), 0.900))
 
     createFolder(TMP .. "savegame3")
-    local f = assert(io.open(TMP .. "savegame3/FS25_EconomyTuner.xml", "w"))
+    local f = assert(REAL_IO.open(TMP .. "savegame3/FS25_EconomyTuner.xml", "w"))
     f:write(config("", '<fillType name="WHEAT" price="450"/>'))
     f:close()
     writeUserConfig(config("", '<fillType name="WHEAT" price="420"/>'), "savegame3.xml")
@@ -351,14 +351,14 @@ do
     writeUserConfig(config("", '<fillType name="WHEAT" price="400" buy="500"/><fruitType name="WHEAT" yieldScale="1.25"/>'))
     startSession(EconomicDifficulty.HARD, STATIONS)
     local result = COMMANDS.etDump()
-    local f = io.open(g_currentModSettingsDirectory .. "priceDump.csv", "r")
+    local f = REAL_IO.open(g_currentModSettingsDirectory .. "priceDump.csv", "r")
     local text = f and f:read("a") or ""
     if f then f:close() end
     check("dump written", result:find("written") ~= nil)
     check("dump has original, applied and buy price", text:find("WHEAT;WHEAT;337.0;400.0;400.3;yes;500.0;", 1, true) ~= nil)
     check("dump lists stations with scale", text:find("dealer x1.20", 1, true) ~= nil)
 
-    f = io.open(g_currentModSettingsDirectory .. "yieldDump.csv", "r")
+    f = REAL_IO.open(g_currentModSettingsDirectory .. "yieldDump.csv", "r")
     text = f and f:read("a") or ""
     if f then f:close() end
     check("yield dump has original and applied litres per ha", text:find("WHEAT;8000;10000;12000;12000;185;185;yes", 1, true) ~= nil)
@@ -397,9 +397,7 @@ do
     check("price changes with the month", near(economy:getBuyPrice(bag), 400 * 0.81, 1e-3))
 
     local result = COMMANDS.etCheck()
-    local f2 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local text = f2 and f2:read("a") or ""
-    if f2 then f2:close() end
+    local text = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck verifies shop items", text:find("OK   wheatbag", 1, true) and text:find("OK   silagebale", 1, true) and result:find("0 failed", 1, true))
 
     startSession(EconomicDifficulty.EASY).environment = newEnvironment(11)
@@ -425,9 +423,7 @@ do
     check("best basis follows the month", near(economy:getBuyPrice(bag), 400 * 1.2 * 0.81, 1e-3))
     check("best basis: etCheck verifies and reports the basis", (function()
         local r = COMMANDS.etCheck()
-        local f3 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-        local t = f3 and f3:read("a") or ""
-        if f3 then f3:close() end
+        local t = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
         return t:find("OK   wheatbag (1000 L of WHEAT, best", 1, true) ~= nil and r:find("0 failed", 1, true) ~= nil
     end)())
 
@@ -449,9 +445,7 @@ do
     price, upgrade = economy:getBuyPrice(bag, { amountPrice = 1500 })
     check("fixed price scales amount options", near(price, 463 * 2, 1e-3) and near(upgrade, 463, 1e-3))
     COMMANDS.etCheck()
-    local f5 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local t5 = f5 and f5:read("a") or ""
-    if f5 then f5:close() end
+    local t5 = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck verifies fixed shop prices", t5:find("OK   wheatbag (1000 L of -, fixed", 1, true) ~= nil)
 
     -- nobody buys it: the game price stays
@@ -462,9 +456,7 @@ do
     startSession(EconomicDifficulty.HARD).environment = newEnvironment(11)
     check("best basis without a buyer keeps the game price", near(g_currentMission.economyManager:getBuyPrice(bag), 1500))
     COMMANDS.etCheck()
-    local f4 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local t4 = f4 and f4:read("a") or ""
-    if f4 then f4:close() end
+    local t4 = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck explains the kept price", t4:find("no selling station buys WHEAT, game price 1500 kept", 1, true) ~= nil)
     writeUserConfig(TABLE)
 end
@@ -485,7 +477,7 @@ do
     for _, difficulty in ipairs({ EconomicDifficulty.HARD, EconomicDifficulty.EASY }) do
         startSession(difficulty, STATIONS)
         local result = COMMANDS.etCheck()
-        local f = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
+        local f = REAL_IO.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
         local text = f and f:read("a") or ""
         if f then f:close() end
         check("etCheck report written (difficulty " .. difficulty .. ")", text:find("checks,", 1, true) ~= nil)
@@ -541,3 +533,64 @@ do
     check("removing fruit override restores original yield and clears stale receipt", near(fruit('BARLEY').literPerSqm, 0.7) and next(EconomyTuner.appliedFruits) == nil)
     restoreDefaultTable()
 end
+
+-- ENV-01 r2: a save writes a new folder that replaces the savegame folder, so the savegame
+-- folder table (and checkOnStart in it) was gone on the next load.
+do
+    useDefaultTable(EMPTY)
+    writeUserConfig(EMPTY)
+    local source = TMP .. "savegame6"
+    createFolder(source)
+    local tableText = config('checkOnStart="true"', '<fillType name="WHEAT" price="455"/>')
+    local f = assert(REAL_IO.open(source .. "/FS25_EconomyTuner.xml", "w")); f:write(tableText); f:close()
+    local mission = startSession(EconomicDifficulty.HARD, nil, "savegame6")
+    check("savegame folder table is applied at load", near(wheat().pricePerLiter, 0.455) and EconomyTuner.settings.checkOnStart == true)
+
+    -- the engine points the mission info at the folder being written, then calls saveToXMLFile
+    local temp = TMP .. "savegame6_temp"
+    createFolder(temp)
+    mission.missionInfo.savegameDirectory = temp
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save writes the savegame folder table into the folder being saved", fileExists(temp .. "/FS25_EconomyTuner.xml") and readFile(temp .. "/FS25_EconomyTuner.xml") == tableText)
+
+    -- edits made while playing are what gets saved
+    local edited = config('checkOnStart="true"', '<fillType name="WHEAT" price="460"/>')
+    f = assert(REAL_IO.open(source .. "/FS25_EconomyTuner.xml", "w")); f:write(edited); f:close()
+    local temp2 = TMP .. "savegame6_temp2"
+    createFolder(temp2)
+    mission.missionInfo.savegameDirectory = temp2
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save keeps the current file, not the copy read at load", readFile(temp2 .. "/FS25_EconomyTuner.xml") == edited)
+
+    -- the old folder is gone after the swap: the remembered copy is written
+    os.remove(source .. "/FS25_EconomyTuner.xml")
+    local temp3 = TMP .. "savegame6_temp3"
+    createFolder(temp3)
+    mission.missionInfo.savegameDirectory = temp3
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save falls back to the remembered table when the old folder was replaced", readFile(temp3 .. "/FS25_EconomyTuner.xml") == edited)
+
+    -- a file already in the folder being saved is not overwritten
+    local temp4 = TMP .. "savegame6_temp4"
+    createFolder(temp4)
+    f = assert(REAL_IO.open(temp4 .. "/FS25_EconomyTuner.xml", "w")); f:write("other"); f:close()
+    mission.missionInfo.savegameDirectory = temp4
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("save never overwrites a table already in the target folder", readFile(temp4 .. "/FS25_EconomyTuner.xml") == "other")
+
+    -- next load from the saved folder has the table and its settings again
+    mission.missionInfo.savegameDirectory = temp
+    startSession(EconomicDifficulty.HARD, nil, "savegame6_temp")
+    check("load after save still applies the savegame folder table", near(wheat().pricePerLiter, 0.455) and EconomyTuner.settings.checkOnStart == true)
+
+    -- a savegame without a folder table writes nothing
+    local temp5 = TMP .. "savegame7_temp"
+    createFolder(temp5)
+    mission = startSession(EconomicDifficulty.HARD, nil, "savegame7")
+    mission.missionInfo.savegameDirectory = temp5
+    FSCareerMissionInfo.saveToXMLFile(mission.missionInfo)
+    check("savegame without a folder table saves none", not fileExists(temp5 .. "/FS25_EconomyTuner.xml"))
+    restoreDefaultTable()
+end
+
+check("FS25 io: the mod opened files for writing only", #IO_MISUSE == 0)

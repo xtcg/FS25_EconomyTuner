@@ -21,6 +21,8 @@ Formerly `FS25_SellPrices`. Since 0.2.0.0: buy prices, harvest yield and seed us
 
 默认表已按《非草料价格与产量调整方案》（2026-10-04）填好：粮油、甜菜、牛奶售价，粮油产量系数，各作物耗种量，种子（BayWa 成交 300 £/1000 L）和固体化肥（BayWa 成交 350 £/1000 L）买价。草料类售价（青草 16、三叶草 18、干草 20、青贮 44、秸秆 9，£/1000 L）也已写入，产量保持不变；块根和蔬菜产量、肉价未改，详见 `config/economy.xml` 里的注释。
 
+2026-10-11：牛奶（MILK、RAWMILK）基线抬到 1.8 £/L，奶牛产奶链按同一比例（×1800/907）同步上调：奶油 1786、脱脂奶 1389、黄油 7540、奶酪 4565、瓶装奶 3175、瓶装奶（单瓶）4565（£/1000 L）。羊奶、水牛奶及其制品不变。对应 RLRM 奶牛产奶量为现实的 1.2 倍。
+
 ### 自己改：三层覆盖
 
 不要改 mod 里的默认表。自己的改动写进下面的覆盖文件，只写想改的条目，其余沿用下层。优先级从低到高：
@@ -172,6 +174,8 @@ Vehicles (prices, upkeep, leasing) and animal output are not covered.
 It works right away: the mod ships a default table (`config/economy.xml`) that is read on every start and updated with the mod. It is a snapshot of base game 1.23.1 and Hof Bergmann 1.5.0.0 Beta2. Table prices are the prices the player sees, and **hold on EASY, NORMAL and HARD** (the mod divides the difficulty multiplier out, see `normalizeDifficulty`).
 
 The default table is filled in according to the non-forage price and yield plan of 2026-10-04: sell prices of grains, oilseeds, sugar beet and milk, yield factors of grains and oilseeds, seed usage per crop, and buy prices of seed (300 per 1000 L at BayWa) and solid fertilizer (350 per 1000 L at BayWa). Forage sell prices (grass 16, clover 18, hay 20, silage 44, straw 9 per 1000 L) are set too with yields unchanged; root-crop and vegetable yields and meat prices are unchanged; see the comments in `config/economy.xml`.
+
+2026-10-11: cow milk (MILK, RAWMILK) is raised to 1.8 per L and the cow-milk chain follows by the same factor (x1800/907): cream 1786, low-fat milk 1389, butter 7540, cheese 4565, bottled milk 3175, bottled milk solo 4565 (per 1000 L). Goat milk, buffalo milk and their products are unchanged. This goes with RLRM cow milk output at 1.2 x real.
 
 ### Your own changes: three override layers
 

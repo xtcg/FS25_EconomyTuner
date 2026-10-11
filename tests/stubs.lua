@@ -2,6 +2,24 @@
 
 local noop = function() end
 
+-- FS25 dataS/scripts/io.lua: io.open only writes. Any other mode prints a warning and still opens
+-- the file for writing (truncating it); the handle has write/close/flush and no read. Mod code
+-- gets this io; tests read and prepare files through REAL_IO.
+REAL_IO = io
+IO_MISUSE = {}
+io = {
+    open = function(filename, mode)
+        if mode ~= "w" then IO_MISUSE[#IO_MISUSE + 1] = tostring(mode) .. " " .. tostring(filename) end
+        local f = REAL_IO.open(filename, "w")
+        if f == nil then return nil end
+        return {
+            write = function(_, ...) for i = 1, select("#", ...) do f:write(tostring((select(i, ...)))) end end,
+            close = function() f:close() end,
+            flush = noop
+        }
+    end
+}
+
 LOG = {}
 local function logger(level)
     return function(fmt, ...) LOG[#LOG + 1] = level .. ": " .. string.format(fmt, ...) end
@@ -37,14 +55,14 @@ Utils = {
 }
 
 function fileExists(path)
-    local f = io.open(path, "r")
+    local f = REAL_IO.open(path, "r")
     if f ~= nil then f:close() return true end
     return false
 end
 function createFolder(path) os.execute("mkdir -p '" .. path .. "'") end
 function copyFile(src, dst)
-    local i = assert(io.open(src, "rb")); local data = i:read("a"); i:close()
-    local o = assert(io.open(dst, "wb")); o:write(data); o:close()
+    local i = assert(REAL_IO.open(src, "rb")); local data = i:read("a"); i:close()
+    local o = assert(REAL_IO.open(dst, "wb")); o:write(data); o:close()
 end
 
 COMMANDS = {}
@@ -120,9 +138,10 @@ end
 
 XMLFile = {
     loadIfExists = function(_, path)
-        local handle = io.open(path, "r")
+        local handle = REAL_IO.open(path, "r")
         if handle == nil then return nil end
-        local text = handle:read("a"):gsub("<!%-%-.-%-%->", ""):gsub("<%?.-%?>", "")
+        local raw = handle:read("a")
+        local text = raw:gsub("<!%-%-.-%-%->", ""):gsub("<%?.-%?>", "")
         handle:close()
         local nodes, counts, stack = {}, {}, {}
         for closing, name, attrText, selfClosing in text:gmatch("<(/?)([%w_]+)([^>]-)(/?)>") do
@@ -144,6 +163,7 @@ XMLFile = {
         end
         local xml = makeXML(nodes, counts)
         xml.filename = path
+        xml.getAsString = function() return raw end
         return xml
     end,
     wrap = function(handle) return handle end,
@@ -297,6 +317,7 @@ end
 g_storeManager = { items = {}, getItems = function(self) return self.items end }
 
 Mission00 = { onStartMission = noop }
+FSCareerMissionInfo = { saveToXMLFile = noop }
 
 ---------------------------------------------------------------------------------------------------
 -- Session helpers
@@ -317,7 +338,7 @@ end
 -- name defaults to the global override file
 function writeUserConfig(text, name)
     createFolder(g_currentModSettingsDirectory)
-    local f = assert(io.open(g_currentModSettingsDirectory .. (name or "global.xml"), "w"))
+    local f = assert(REAL_IO.open(g_currentModSettingsDirectory .. (name or "global.xml"), "w"))
     f:write(text)
     f:close()
 end
