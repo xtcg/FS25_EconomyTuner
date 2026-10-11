@@ -148,16 +148,17 @@
     <fillType name="CHERRYPACKED"            price="1300"/>    <!-- HB -->
 
     <!-- ===== 奶 / 蛋 / 毛 / 蜜 Milk, eggs, fibre, honey ===== -->
-    <!-- Dairy chain, 2026-10-11: the products were priced against raw milk 0.9/L with the farm filling station's bottled milk
-         (MILK_BOTTLED_SOLO 1.8/L) at 2.0 x raw milk and every product at 1.5-2.0 x. Raw milk alone was then set to 0.5/L: calf milk
-         (0.4/L in the game) is what a real calf's milk costs, and in reality prepared milk replacer costs about 0.6-1.0 x whole milk per
-         feeding (Teagasc 1.95 vs 3.21 EUR a day, US study 1.89 vs 3.22 USD, equal at a 0.35/L milk price), so raw milk = 0.4 / 0.8.
-         The products did not move: with milk at 0.5 a liter of milk sold as bottled milk (1.8) or cheese (2.7 per L cheese, 75 L milk for
-         50) now earns 3.6 x its raw price and the contract dairy's bottled milk 2.9 x; selling raw milk is the low-margin way out. -->
+    <!-- Dairy chain, 2026-10-11. Anchor: the farm filling station's bottled milk (MILK_BOTTLED_SOLO) 2.0/L. In the UK a farm's own
+         bottled milk sells for about 1.5/L (direct sales); the game takes 2.0, and every product except raw milk follows by the same
+         step (x10/9 from the earlier 1.8 anchor). Raw milk is priced apart: 0.5/L, from calf milk (0.4/L: a 200 sack of milk powder
+         makes 500 L) because prepared milk replacer costs about 0.6-1.0 x whole milk per feeding (Teagasc 1.95 vs 3.21 EUR a day,
+         US study 1.89 vs 3.22 USD). Value per liter of raw milk used, raw milk 0.5: bottled milk (farm station) 4.0 x, cheese
+         (50 per 75 L milk) 4.0 x, butter chain (0.3 L butter + 0.7 L low-fat) 3.5 x, dairy-contract bottled milk 3.2 x, cream plus
+         low-fat 2.2 x; goat and buffalo products carry the same step on their own milk price. Selling raw milk is the low-margin way out. -->
     <fillType name="MILK"                    price="500"/>     <!-- 2026-10-11: calf milk 0.4 / 0.8 (replacer to whole milk cost); was 1800, 907 originally -->
     <fillType name="RAWMILK"                 price="500"/>     <!-- MVB raw milk, same as MILK -->
-    <fillType name="CREAM"                   price="1670"/>    <!-- set against raw milk 0.9 (1.1 x 900 - 0.7 x 700) / 0.3; was 1786 -->
-    <fillType name="LOWFATMILK"              price="700"/>     <!-- 0.78 x raw milk; was 1389 -->
+    <fillType name="CREAM"                   price="1860"/>    <!-- 2026-10-11: was 1670 (x10/9 with the anchor), 1786 before the dairy re-pricing -->
+    <fillType name="LOWFATMILK"              price="780"/>    <!-- 2026-10-11: was 700 (x10/9 with the anchor), 1389 before the dairy re-pricing -->
     <fillType name="BUFFALOMILK"             price="2500"/>    <!-- HB-modified, base 3500, 2427/t -->
     <fillType name="GOATMILK"                price="1500"/>    <!-- HB-modified, base 2820, 1456/t -->
     <fillType name="EGG"                     price="1120"/>    <!-- base, per 1000 pieces -->
@@ -188,14 +189,14 @@
     <fillType name="BREAD"                   price="1650"/>    <!-- base -->
     <fillType name="CAKE"                    price="3300"/>    <!-- base, 3882/t -->
     <fillType name="CEREAL"                  price="3800"/>    <!-- base, 7600/t -->
-    <fillType name="BUTTER"                  price="3620"/>    <!-- chain 1.75 x raw milk: (1.75 x 900 - 0.7 x 700) / 0.3; was 7540 -->
-    <fillType name="CHEESE"                  price="2700"/>    <!-- 2.0 x 900 x 75 / 50; was 4565 -->
-    <fillType name="GOATCHEESE"              price="4500"/>    <!-- 2.0 x goat milk 1500 x 75 / 50; was 2890 -->
-    <fillType name="BUFFALOMOZZARELLA"       price="5770"/>    <!-- 2.0 x buffalo milk 2500 x 150 / 130; was 7500 -->
-    <fillType name="MILK_BOTTLED"            price="1440"/>    <!-- 1.6 x raw milk (dairy contract); was 3175 -->
-    <fillType name="MILK_BOTTLED_SOLO"       price="1800"/>    <!-- ANCHOR: 2.0 x raw milk (farm filling station); was 4565 -->
-    <fillType name="GOATMILK_BOTTLED"        price="2400"/>    <!-- 1.6 x goat milk 1500; was 2110 -->
-    <fillType name="BUFFALOMILK_BOTTLED"     price="4000"/>    <!-- 1.6 x buffalo milk 2500; was 2490 -->
+    <fillType name="BUTTER"                  price="4020"/>    <!-- 2026-10-11: was 3620 (x10/9 with the anchor), 7540 before the dairy re-pricing -->
+    <fillType name="CHEESE"                  price="3000"/>    <!-- 2026-10-11: was 2700 (x10/9 with the anchor), 4565 before the dairy re-pricing -->
+    <fillType name="GOATCHEESE"              price="5000"/>    <!-- 2026-10-11: was 4500 (x10/9 with the anchor), 2890 before the dairy re-pricing -->
+    <fillType name="BUFFALOMOZZARELLA"       price="6410"/>    <!-- 2026-10-11: was 5770 (x10/9 with the anchor), 7500 before the dairy re-pricing -->
+    <fillType name="MILK_BOTTLED"            price="1600"/>    <!-- 2026-10-11: was 1440 (x10/9 with the anchor), 3175 before the dairy re-pricing -->
+    <fillType name="MILK_BOTTLED_SOLO"       price="2000"/>    <!-- ANCHOR, 2026-10-11: was 1800 (x10/9 with the anchor), 4565 before the dairy re-pricing -->
+    <fillType name="GOATMILK_BOTTLED"        price="2670"/>    <!-- 2026-10-11: was 2400 (x10/9 with the anchor), 2110 before the dairy re-pricing -->
+    <fillType name="BUFFALOMILK_BOTTLED"     price="4440"/>    <!-- 2026-10-11: was 4000 (x10/9 with the anchor), 2490 before the dairy re-pricing -->
     <fillType name="SUGAR"                   price="500"/>     <!-- base, 500/t -->
     <fillType name="CHOCOLATE"               price="2000"/>    <!-- base, 2000/t -->
     <fillType name="CANOLA_OIL"              price="1640"/>    <!-- base, 1822/t -->
