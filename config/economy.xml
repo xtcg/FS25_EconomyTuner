@@ -176,7 +176,7 @@
     <!-- ===== 肉 / 鱼 Meat, fish ===== -->
     <fillType name="BEEFMEAT"                price="1800"/>    <!-- HB, 1800/t -->
     <fillType name="PORKMEAT"                price="1500"/>    <!-- HB, 1500/t -->
-    <fillType name="SHEEPGOATMEAT"           price="2300"/>    <!-- HB, 2300/t -->
+    <fillType name="SHEEPGOATMEAT"           price="14940"/>   <!-- 2026-10-11: the annual mean RLRM's lamb live-price curves are calibrated to (live lamb 4.0/kg, contract slaughter +12% a year at a 1.0 station; RLRM PR #22 / dev 0a8d221); was HB 2300 -->
     <fillType name="POULTRYMEAT"             price="1300"/>    <!-- HB, 1300/t -->
     <fillType name="RABBITMEAT"              price="1800"/>    <!-- HB, 1800/t -->
     <fillType name="GOOSEMEAT"               price="2100"/>    <!-- HB, 2100/t -->
