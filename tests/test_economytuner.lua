@@ -397,9 +397,7 @@ do
     check("price changes with the month", near(economy:getBuyPrice(bag), 400 * 0.81, 1e-3))
 
     local result = COMMANDS.etCheck()
-    local f2 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local text = f2 and f2:read("a") or ""
-    if f2 then f2:close() end
+    local text = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck verifies shop items", text:find("OK   wheatbag", 1, true) and text:find("OK   silagebale", 1, true) and result:find("0 failed", 1, true))
 
     startSession(EconomicDifficulty.EASY).environment = newEnvironment(11)
@@ -425,9 +423,7 @@ do
     check("best basis follows the month", near(economy:getBuyPrice(bag), 400 * 1.2 * 0.81, 1e-3))
     check("best basis: etCheck verifies and reports the basis", (function()
         local r = COMMANDS.etCheck()
-        local f3 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-        local t = f3 and f3:read("a") or ""
-        if f3 then f3:close() end
+        local t = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
         return t:find("OK   wheatbag (1000 L of WHEAT, best", 1, true) ~= nil and r:find("0 failed", 1, true) ~= nil
     end)())
 
@@ -449,9 +445,7 @@ do
     price, upgrade = economy:getBuyPrice(bag, { amountPrice = 1500 })
     check("fixed price scales amount options", near(price, 463 * 2, 1e-3) and near(upgrade, 463, 1e-3))
     COMMANDS.etCheck()
-    local f5 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local t5 = f5 and f5:read("a") or ""
-    if f5 then f5:close() end
+    local t5 = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck verifies fixed shop prices", t5:find("OK   wheatbag (1000 L of -, fixed", 1, true) ~= nil)
 
     -- nobody buys it: the game price stays
@@ -462,9 +456,7 @@ do
     startSession(EconomicDifficulty.HARD).environment = newEnvironment(11)
     check("best basis without a buyer keeps the game price", near(g_currentMission.economyManager:getBuyPrice(bag), 1500))
     COMMANDS.etCheck()
-    local f4 = io.open(g_currentModSettingsDirectory .. "etCheck.txt", "r")
-    local t4 = f4 and f4:read("a") or ""
-    if f4 then f4:close() end
+    local t4 = readFile(g_currentModSettingsDirectory .. "etCheck.txt")
     check("etCheck explains the kept price", t4:find("no selling station buys WHEAT, game price 1500 kept", 1, true) ~= nil)
     writeUserConfig(TABLE)
 end
