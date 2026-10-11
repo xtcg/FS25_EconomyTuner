@@ -174,12 +174,12 @@
     <fillType name="HONEY"                   price="3000"/>    <!-- HB-modified, base 1000, 2069/t -->
 
     <!-- ===== 肉 / 鱼 Meat, fish ===== -->
-    <fillType name="BEEFMEAT"                price="1800"/>    <!-- HB, 1800/t -->
-    <fillType name="PORKMEAT"                price="1500"/>    <!-- HB, 1500/t -->
+    <fillType name="BEEFMEAT"                price="8393"/>    <!-- 2026-10-11: annual mean 8.4/kg (seasonal factors average 1.0008), the mean RLRM's bull curves and cattle contract fee are calibrated to (RLRM PR #27); Hof Bergmann Beta2 ships 2100 -->
+    <fillType name="PORKMEAT"                price="4300"/>    <!-- 2026-10-11: RLRM PR #22 calibration at a 1.0 station (annual mean 4.31/kg, contract slaughter +12% a year over live); Hof Bergmann Beta2 ships 1800 -->
     <fillType name="SHEEPGOATMEAT"           price="14940"/>   <!-- 2026-10-11: the annual mean RLRM's lamb live-price curves are calibrated to (live lamb 4.0/kg, contract slaughter +12% a year at a 1.0 station; RLRM PR #22 / dev 0a8d221); was HB 2300 -->
-    <fillType name="POULTRYMEAT"             price="1300"/>    <!-- HB, 1300/t -->
-    <fillType name="RABBITMEAT"              price="1800"/>    <!-- HB, 1800/t -->
-    <fillType name="GOOSEMEAT"               price="2100"/>    <!-- HB, 2100/t -->
+    <fillType name="POULTRYMEAT"             price="9050"/>    <!-- 2026-10-11: RLRM PR #22 calibration at a 1.0 station (annual mean 9.06/kg); was HB 1300 -->
+    <fillType name="RABBITMEAT"              price="10340"/>   <!-- 2026-10-11: RLRM PR #22 calibration at a 1.0 station (annual mean 10.34/kg); was HB 1800 -->
+    <fillType name="GOOSEMEAT"               price="10200"/>   <!-- 2026-10-11: RLRM PR #22 calibration at a 1.0 station (annual mean 10.21/kg); was HB 2100 -->
     <fillType name="HORSEMEAT"               price="2100"/>    <!-- HB, 2100/t -->
     <fillType name="DEERMEAT"                price="3000"/>    <!-- HB, 3000/t -->
     <fillType name="WILDBOARMEAT"            price="3000"/>    <!-- HB, 3000/t -->
