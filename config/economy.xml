@@ -166,9 +166,9 @@
     <fillType name="EGG"                     price="1120"/>    <!-- base, per 1000 pieces -->
     <fillType name="EGG_HB"                  price="1120"/>    <!-- HB, per 1000 pieces -->
     <fillType name="QUAILEGG"                price="2500"/>    <!-- HB, per 1000 pieces -->
-    <fillType name="WOOL"                    price="940"/>     <!-- base, per 1000 pieces -->
-    <fillType name="SHEEPWOOL_SHEARED"       price="240"/>     <!-- HB, 316/t -->
-    <fillType name="SHEEPWOOL_CLEANED"       price="1980"/>    <!-- HB, 3536/t -->
+    <fillType name="WOOL"                    price="950"/>     <!-- 2026-10-11: raw (greasy) wool, the same step as HB's sheared wool; was 940 -->
+    <fillType name="SHEEPWOOL_SHEARED"       price="950"/>     <!-- 2026-10-11: raw wool 0.27 x cleaned (1250/t at 0.76 kg/L); was HB 240. Ships with RLRM's wool at 1.2 x real fleece: at the old curves (85 L a sheep a month) it would quadruple wool income -->
+    <fillType name="SHEEPWOOL_CLEANED"       price="3500"/>    <!-- 2026-10-11: washed, dried and pressed wool = 3.68 x raw wool per liter (HB chain 1 L -> 1 L, 0.76 -> 0.56 kg/L; 6250/t); was HB 1980 -->
     <fillType name="ALPACA_WOOL"             price="2940"/>    <!-- HB, 6391/t -->
     <fillType name="GOOSEFEATHERS"           price="3100"/>    <!-- HB, 3100/t -->
     <fillType name="HONEY"                   price="3000"/>    <!-- HB-modified, base 1000, 2069/t -->
