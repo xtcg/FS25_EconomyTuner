@@ -154,14 +154,14 @@
          makes 500 L) because prepared milk replacer costs about 0.6-1.0 x whole milk per feeding (Teagasc 1.95 vs 3.21 EUR a day,
          US study 1.89 vs 3.22 USD). Value per liter of raw milk used, raw milk 0.5: bottled milk (farm station) 4.0 x, cheese
          (50 per 75 L milk) 4.0 x, butter chain (0.3 L butter + 0.7 L low-fat) 3.5 x, dairy-contract bottled milk 3.2 x, cream plus
-         low-fat 2.2 x; goat and buffalo products carry the same multiples of their own raw milk (goat 1.5, buffalo 2.5: cheese and
+         low-fat 2.2 x; goat and buffalo products carry the same multiples of their own raw milk (goat 1.5, buffalo 1.5: about 3 x cow milk, as in reality; cheese and
          mozzarella 4.0 x, bottled milk from the dairy contract 3.2 x), as they are worth more than cow milk in reality. Selling raw milk is
          the low-margin way out. -->
     <fillType name="MILK"                    price="500"/>     <!-- 2026-10-11: calf milk 0.4 / 0.8 (replacer to whole milk cost); was 1800, 907 originally -->
     <fillType name="RAWMILK"                 price="500"/>     <!-- MVB raw milk, same as MILK -->
     <fillType name="CREAM"                   price="1860"/>    <!-- 2026-10-11: was 1670 (x10/9 with the anchor), 1786 before the dairy re-pricing -->
     <fillType name="LOWFATMILK"              price="780"/>    <!-- 2026-10-11: was 700 (x10/9 with the anchor), 1389 before the dairy re-pricing -->
-    <fillType name="BUFFALOMILK"             price="2500"/>    <!-- HB-modified, base 3500, 2427/t -->
+    <fillType name="BUFFALOMILK"             price="1500"/>    <!-- 2026-10-11: 3 x cow milk (real buffalo milk 2.5-3 x), was 2500; HB base 3500 -->
     <fillType name="GOATMILK"                price="1500"/>    <!-- HB-modified, base 2820, 1456/t -->
     <fillType name="EGG"                     price="1120"/>    <!-- base, per 1000 pieces -->
     <fillType name="EGG_HB"                  price="1120"/>    <!-- HB, per 1000 pieces -->
@@ -194,11 +194,11 @@
     <fillType name="BUTTER"                  price="4020"/>    <!-- 2026-10-11: was 3620 (x10/9 with the anchor), 7540 before the dairy re-pricing -->
     <fillType name="CHEESE"                  price="3000"/>    <!-- 2026-10-11: was 2700 (x10/9 with the anchor), 4565 before the dairy re-pricing -->
     <fillType name="GOATCHEESE"              price="9000"/>    <!-- 2026-10-11: goat and buffalo products carry the cow products' multiple of their own milk (cheese 4.0 x); was 5000 -->
-    <fillType name="BUFFALOMOZZARELLA"       price="11540"/>    <!-- 2026-10-11: goat and buffalo products carry the cow products' multiple of their own milk (cheese 4.0 x); was 6410 -->
+    <fillType name="BUFFALOMOZZARELLA"       price="6920"/>    <!-- 2026-10-11: buffalo milk 1500 x the cow products' multiple (cheese 4.0 x); was 11540 -->
     <fillType name="MILK_BOTTLED"            price="1600"/>    <!-- 2026-10-11: was 1440 (x10/9 with the anchor), 3175 before the dairy re-pricing -->
     <fillType name="MILK_BOTTLED_SOLO"       price="2000"/>    <!-- ANCHOR, 2026-10-11: was 1800 (x10/9 with the anchor), 4565 before the dairy re-pricing -->
     <fillType name="GOATMILK_BOTTLED"        price="4800"/>    <!-- 2026-10-11: goat and buffalo products carry the cow products' multiple of their own milk (dairy-contract bottled 3.2 x); was 2670 -->
-    <fillType name="BUFFALOMILK_BOTTLED"     price="8000"/>    <!-- 2026-10-11: goat and buffalo products carry the cow products' multiple of their own milk (dairy-contract bottled 3.2 x); was 4440 -->
+    <fillType name="BUFFALOMILK_BOTTLED"     price="4800"/>    <!-- 2026-10-11: buffalo milk 1500 x the cow products' multiple (dairy-contract bottled 3.2 x); was 8000 -->
     <fillType name="SUGAR"                   price="500"/>     <!-- base, 500/t -->
     <fillType name="CHOCOLATE"               price="2000"/>    <!-- base, 2000/t -->
     <fillType name="CANOLA_OIL"              price="1640"/>    <!-- base, 1822/t -->
